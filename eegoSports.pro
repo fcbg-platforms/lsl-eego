@@ -24,7 +24,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG +=  qt warn_on c++11 \
 
-
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
@@ -34,9 +33,13 @@ HEADERS +=  mainwindow.h \
 
 FORMS += mainwindow.ui
 
-INCLUDEPATH += $$(BOOST_ROOT)
-#INCLUDEPATH += quote($$(LSL_DIR)/include)
-INCLUDEPATH += $$(LSL_DIR)
+unix:!macx: {
+    LIBS += -leego-SDK -ldl -llsl64 -lboost_thread
+}
 
-LIBS += -L$$quote($$PWD) -leego-SDK \
-        -L$$quote($$(LSL_DIR)/lib) -lliblsl64
+win32: {
+    INCLUDEPATH += $(BOOST_ROOT) \
+                   quote($$LSL_DIR/include)
+    LIBS += -L$$quote($$PWD) -leego-SDK \
+            -L$$quote($$(LSL_DIR)/lib) -lliblsl64
+}

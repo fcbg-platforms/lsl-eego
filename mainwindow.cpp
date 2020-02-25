@@ -8,10 +8,11 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/chrono.hpp>
+
 #include <fstream>
 #include <bitset>
-
-#include <Windows.h>
 
 using namespace eemagine::sdk;
 
@@ -22,8 +23,8 @@ static const std::vector<std::string> electrodeMap_209 =
 {"FP1",       "FPZ",       "FP2",      "F7",      "F3",       "FZ",       "F4",
  "F8",        "FC5",       "FC1",      "FC2",     "FC6",      "M1",       "T7",
  "C3",        "CZ",        "C4",       "T8",       "M2",      "CP5",      "CP1",
- "CP2",     "CP6",       "P7",       "P3",       "PZ",        "P4",       "P8",
- "POZ",     "O1",        "OZ",       "O2",       "TRIGGER",       "SAMPLECOUNT"
+ "CP2",       "CP6",       "P7",       "P3",       "PZ",      "P4",       "P8",
+ "POZ",       "O1",        "OZ",       "O2",       "TRIGGER", "SAMPLECOUNT"
 };
 
 static const std::vector<std::string> electrodeMap_208 = {
@@ -430,7 +431,8 @@ void Reader::read() {
 
         while (!stop) {
 
-            Sleep(8);
+            //Sleep(8);
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(8));
 
             buffer = eegStream->getData();
             unsigned int channelCount = buffer.getChannelCount();

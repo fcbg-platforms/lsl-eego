@@ -11,12 +11,16 @@
 #include <vector>
 
 // LSL API
-#include <include/lsl_cpp.h>
+#include <LSL/lsl_cpp.h>
 
 // eegoSports
 #define WIN32_LEAN_AND_MEAN
 #define EEGO_SDK_BIND_STATIC
+
+#ifdef _WIN32
 #include <Windows.h>
+#endif
+
 #include "eemagine/sdk/factory.h"
 
 // --------------------------------------------------------------------------------

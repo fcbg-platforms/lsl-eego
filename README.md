@@ -1,5 +1,6 @@
 # eego2lsl
 LSL plugin for the EEG acquisition with ANTneuro device.
+
 The released standalones for Windows and Linux can be find in the /release folder (02.27.2020).
 
 ## Windows

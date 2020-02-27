@@ -22,5 +22,12 @@ sudo cp 90-eego.rules /etc/udev/rules.d
 sudo service udev restart
 ```
 
-### Support
+## Usage
+1. Select the CAP ID by looking directly on the cap you have. If unusual montages are done, selected No labels options; it will display Ch1,..., ChX in the data.
+2. Select the desired sampling rate
+3. EEG/BIP do not need to be change to the standart values already selected
+4. EEG/BIP masks allow to restrict the acquisition to a channels subpart. The mask is in hexadecimal. To prepare the mask, write from right to left a binary vector (e.g. 00101 to keep only Ch1 and Ch3) and then convert it to an hexadecimal (<https://www.rapidtables.com/convert/number/binary-to-hex.html>). Notice that all the zeros on the left after the last 1 will disappear during the conversion and need to be added again to the hex number.
+5. Link to start the data streaming to the LSL local server.
+
+## Support
 Contact <arnaud.desvachez@gmail.com>

@@ -1,5 +1,4 @@
-# eego2lsl
-LSL plugin for the EEG acquisition with ANTneuro device.
+# LSL plugin for the EEG acquisition with ANTneuro device.
 
 The released standalones for Windows and Linux can be found in the /release folder        [compiled date: 02.27.2020].
 
@@ -7,8 +6,7 @@ The released standalones for Windows and Linux can be found in the /release fold
 ### Windows
 The Windows standalone has been compiled on Windows 10 with Qt Creator.
 
-To use the plugin, the driver (in /eegoDriver) has to be installed. The Windows 8 driver can be used for Windows 10. 
-
+To use the plugin, the driver has to be installed. The Windows 8 driver can be used for Windows 10. 
 Run the file ```cyusb3.sys``` and follow the instructions.
 
 ### Linux

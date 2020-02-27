@@ -24,6 +24,7 @@ A .pro file can be found to create the makefile using Qt Creator. The C++ boost 
 
 ## Usage
 1. Select the CAP ID by looking directly on the cap you have. 
+
 If unusual montages, choose No labels options; it will display Ch1,..., ChX in the data.
 2. Select the desired sampling rate
 3. Pre-Selected EEG/BIP ranges are ok for most of the application.  

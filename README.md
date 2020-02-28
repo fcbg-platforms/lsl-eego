@@ -10,7 +10,7 @@ To use the plugin, the driver has to be installed. The Windows 8 driver can be u
 Run the file ```cyusb3.sys``` and follow the instructions.
 
 ### Linux
-The Linux standalone has been compiled on Ubuntu 14.04 with Qt Creator. It will work on 14.04 and later.
+The Linux standalone has been compiled on Ubuntu 16.04 with Qt Creator. It will work on 16.04 and later.
 
 To avoid the need of superuser privilege, add the udev rule:
 ```

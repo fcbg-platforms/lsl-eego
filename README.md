@@ -1,10 +1,10 @@
 # LSL plugin for the EEG acquisition with ANTneuro device.
 
-The released version for Windows and Linux can be found in the /release folder        [compiled date: 02.27.2020].
+The released version for Windows and Linux can be found in the /release folder        .
 
 ## Installation
 ### Windows
-The Windows release has been compiled on Windows 10 with Qt Creator.
+The Windows release has been compiled on Windows 10 with Qt Creator on 02.27.2020.
 
 Missing files:
 - win drivers

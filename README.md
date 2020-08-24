@@ -1,16 +1,26 @@
 # LSL plugin for the EEG acquisition with ANTneuro device.
 
-The released standalones for Windows and Linux can be found in the /release folder        [compiled date: 02.27.2020].
+The released version for Windows and Linux can be found in the /release folder        [compiled date: 02.27.2020].
 
 ## Installation
 ### Windows
-The Windows standalone has been compiled on Windows 10 with Qt Creator.
+The Windows release has been compiled on Windows 10 with Qt Creator.
 
-To use the plugin, the driver has to be installed. The Windows 8 driver can be used for Windows 10. 
-Run the file ```cyusb3.sys``` and follow the instructions.
+Missing files:
+- win drivers
+- eego-SDK.dll
+
+If you work at Campus Biotech Geneva, contact the maintainer to receive the files otherwise contact directly the compagny to buy them.
+
+To use the plugin, the driver has to be installed from the device manager. The Windows 8 driver can be used for Windows 10. 
 
 ### Linux
-The Linux standalone has been compiled on Ubuntu 16.04 with Qt Creator. It will work on 16.04 and later.
+The Linux release has been compiled on Ubuntu 16.04 with Qt Creator. It will work on 16.04 and later.
+
+Missing file:
+- eego-SDK.lib
+
+If you work at Campus Biotech Geneva, contact the maintainer to receive the file otherwise contact directly the compagny to buy it.
 
 To avoid the need of superuser privilege, add the udev rule:
 ```
@@ -19,7 +29,7 @@ sudo cp 90-eego.rules /etc/udev/rules.d
 sudo service udev restart
 ```
 
-## Compilation
+## Compilation from source code
 A .pro file can be found to create the makefile using Qt Creator. The C++ boost lib is required.
 
 ## Usage

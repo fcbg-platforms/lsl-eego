@@ -1,7 +1,5 @@
 # LSL plugin for the EEG acquisition with ANTneuro device.
 
-The released version for Windows and Linux can be found in the /release folder        .
-
 ## Installation
 ### Windows
 The Windows release has been compiled on Windows 10 with Qt Creator on 02.27.2020.
@@ -15,12 +13,12 @@ If you work at Campus Biotech Geneva, contact the maintainer to receive the file
 To use the plugin, the driver has to be installed from the device manager. The Windows 8 driver can be used for Windows 10. 
 
 ### Linux
-The Linux release has been compiled on Ubuntu 16.04 with Qt Creator. It will work on 16.04 and later.
+The Linux release has been compiled on Ubuntu 16.04 with Qt Creator. It will work on 16.04 or later.
 
 Missing file:
 - eego-SDK.lib
 
-If you work at Campus Biotech Geneva, contact the maintainer to receive the file otherwise contact directly the compagny to buy it.
+Contact the maintainer if you work at Campus Biotech Geneva to receive the Linux release or the missing files.
 
 To avoid the need of superuser privilege, add the udev rule:
 ```

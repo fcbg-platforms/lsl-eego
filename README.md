@@ -21,8 +21,8 @@ Missing file:
 Contact the maintainer if you work at Campus Biotech Geneva to receive the Linux release or the missing files.
 
 To avoid the need of superuser privilege, add the udev rule:
-- Create the file ```90-eego.rules``` and copy paste: ```ATTRS{idVendor}=="2a56", ATTRS{idProduct}=="ee01", SYMLINK+="eego3.%n",
-MODE:="0666", ENV{DEVTYPE}=="usb_device"```
+- Create the file ```90-eego.rules``` and copy paste: 
+```ATTRS{idVendor}=="2a56", ATTRS{idProduct}=="ee01", SYMLINK+="eego3.%n",MODE:="0666", ENV{DEVTYPE}=="usb_device"```
 - Run:
 ```
 sudo cp 90-eego.rules /etc/udev/rules.d

@@ -20,7 +20,7 @@ using namespace eemagine::sdk;
 // Layouts
 //---------------------------------------------------------------------------
 static const std::vector<std::string> electrodeMap_209 =
-{"Fp1",       "FPz",       "Fp2",      "F7",      "F3",       "Fz",       "F4",
+{"Fp1",       "Fpz",       "Fp2",      "F7",      "F3",       "Fz",       "F4",
  "F8",        "FC5",       "FC1",      "FC2",     "FC6",      "M1",       "T7",
  "C3",        "Cz",        "C4",       "T8",       "M2",      "CP5",      "CP1",
  "CP2",       "CP6",       "P7",       "P3",       "Pz",      "P4",       "P8",
@@ -28,8 +28,8 @@ static const std::vector<std::string> electrodeMap_209 =
 };
 
 static const std::vector<std::string> electrodeMap_208 = {
-    "Fp1",       "FPz",       "Fp2",       "F7",        "F3",        "Fz",        "F4",
-    "F8",        "FC5",        "FC1",      "FC2",       "FC6",       "M1",        "T7",
+    "Fp1",       "Fpz",       "Fp2",       "F7",        "F3",        "Fz",        "F4",
+    "F8",        "FC5",       "FC1",       "FC2",       "FC6",       "M1",        "T7",
     "C3",        "Cz",        "C4",        "T8",        "M2",        "CP5",       "CP1",
     "CP2",       "CP6",       "P7",        "P3",        "Pz",        "P4",        "P8",
     "POz",       "O1",        "O2",        "EOG",       "AF7",       "AF3",       "AF4",
@@ -41,7 +41,7 @@ static const std::vector<std::string> electrodeMap_208 = {
 };
 
 static const std::vector<std::string> electrodeMap_203 = {
-    "Fp1",     "FPz",     "Fp2",      "F7",       "F3",       "Fz",       "F4",
+    "Fp1",     "Fpz",     "Fp2",      "F7",       "F3",       "Fz",       "F4",
     "F8",      "FC5",     "FC1",      "FC2",      "FC6",      "M1",       "T7",
     "C3",      "Cz",      "C4",       "T8",       "M2",       "CP5",      "CP1",
     "CP2",     "CP6",     "P7",       "P3",       "Pz",       "P4",       "P8",
@@ -70,7 +70,6 @@ static const std::vector<std::string> electrodeMap_64 = {
     "Ch29",     "Ch30",     "Ch31",     "Ch32",     "Ch33",     "Ch34",     "Ch35",
     "Ch36",     "Ch37",     "Ch38",     "Ch39",     "Ch40",     "Ch41",     "Ch42",
     "Ch43",     "Ch44",     "Ch45",     "Ch46",     "Ch47",     "Ch48",     "Ch49",
-    "Ch50",     "Ch51",     "Ch52",     "Ch53",     "Ch54",     "Ch55",     "Ch56",
     "Ch50",     "Ch51",     "Ch52",     "Ch53",     "Ch54",     "Ch55",     "Ch56",
     "Ch57",     "Ch58",     "Ch59",     "Ch60",     "Ch61",     "Ch62",     "Ch63",
     "Ch64",     "TRIGGER",  "SAMPLECOUNT"
@@ -165,7 +164,7 @@ void MainWindow::load_config(const std::string &filename) {
     // get config values
     try {
         ui.Cap_ID->setCurrentIndex(pt.get<int>("settings.capId", 1));
-        ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingRate", 2));
+        ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
         ui.EEG_Range->setCurrentIndex(pt.get<int>("settings.EegRange", 0));
         ui.BIP_Range->setCurrentIndex(pt.get<int>("settings.BipRange", 2));
 

@@ -1,0 +1,18 @@
+# QtDesignStudio
+*.qtds
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# VS code
+.vscode/
+
+# Rope project settings
+.ropeproject
+
+# macOS
+.DS_Store
+
+# eego SDK
+eego-SDK.dll

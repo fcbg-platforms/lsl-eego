@@ -1,6 +1,9 @@
 # QtDesignStudio
 *.qtds
 
+# QtCreator
+*.user
+
 # Spyder project settings
 .spyderproject
 .spyproject

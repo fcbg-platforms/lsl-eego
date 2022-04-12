@@ -6,4 +6,4 @@ The LabStreamingLayer headers included correspond to the release 1.16.0.
 
 ## EEGO SDK
 
-The eego SDK headers included correspond to the release 1.3.23.
+The eego SDK headers included correspond to the release 1.3.27.

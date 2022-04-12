@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -28,8 +28,6 @@
 #ifndef __eemagine_sdk_factory_h__
 #define __eemagine_sdk_factory_h__
 
-#define EEGO_SDK_BIND_STATIC // How to bind the sdk library.
-
  // system
 #include <vector>
 // eemagine
@@ -47,10 +45,11 @@
 #define _UNICODE
 #endif
 
+#define EEMAGINE_SDK_HAVE_CASCADING
 
 namespace eemagine {
     namespace sdk {
-        /// entry point for the Eemagine SDK. The factory buildbs amplifiers
+        /// entry point for the Eemagine SDK. The factory builds amplifiers
         class factory {
         public:
             ///////////////////////////////////////////////////////////////////////////////
@@ -76,7 +75,7 @@ namespace eemagine {
              * caller is responsible to delete the pointers.
              * @return vector of pointers to amplifiers
              */
-            std::vector<eemagine::sdk::amplifier *> getAmplifiers();
+            std::vector<eemagine::sdk::amplifier*> getAmplifiers();
             ///////////////////////////////////////////////////////////////////////////////
             /**
             * Returns a pointer to the first connected amplifier.
@@ -85,7 +84,7 @@ namespace eemagine {
             * if no amplifiers are found.
             * @return pointer to an available amplifier
             */
-            eemagine::sdk::amplifier * getAmplifier();
+            eemagine::sdk::amplifier* getAmplifier();
             ///////////////////////////////////////////////////////////////////////////////
             /**
             * Returns a pointer to a virtual amplifier.
@@ -95,7 +94,7 @@ namespace eemagine {
             * @param list list of amplifiers
             * @return pointer to an available amplifier
             */
-            eemagine::sdk::amplifier * createCascadedAmplifier(const std::vector<eemagine::sdk::amplifier *> & list);
+            eemagine::sdk::amplifier* createCascadedAmplifier(const std::vector<eemagine::sdk::amplifier*>& list);
             ///////////////////////////////////////////////////////////////////////////////
             /**
              * Get version information

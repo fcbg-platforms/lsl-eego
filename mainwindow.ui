@@ -37,27 +37,12 @@
           <widget class="QComboBox" name="Cap_ID">
            <item>
             <property name="text">
-             <string>CA-203  (32 ch)</string>
+             <string>64 chs - 10/20</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>CA-208  (64 ch)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>CA-209  (128 ch)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string> 64   - No Labels</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>128 - No Labels</string>
+             <string> 64 chs - No Labels</string>
             </property>
            </item>
           </widget>

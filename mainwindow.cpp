@@ -20,15 +20,7 @@ using namespace eemagine::sdk;
 //---------------------------------------------------------------------------
 // Layouts
 //---------------------------------------------------------------------------
-static const std::vector<std::string> electrodeMap_209 =
-{"Fp1",       "Fpz",       "Fp2",      "F7",      "F3",       "Fz",       "F4",
- "F8",        "FC5",       "FC1",      "FC2",     "FC6",      "M1",       "T7",
- "C3",        "Cz",        "C4",       "T8",       "M2",      "CP5",      "CP1",
- "CP2",       "CP6",       "P7",       "P3",       "Pz",      "P4",       "P8",
- "POz",       "O1",        "Oz",       "O2",       "TRIGGER", "SAMPLECOUNT"
-};
-
-static const std::vector<std::string> electrodeMap_208 = {
+static const std::vector<std::string> electrodeMap_64 = {
     "Fp1",       "Fpz",       "Fp2",       "F7",        "F3",        "Fz",        "F4",
     "F8",        "FC5",       "FC1",       "FC2",       "FC6",       "M1",        "T7",
     "C3",        "Cz",        "C4",        "T8",        "M2",        "CP5",       "CP1",
@@ -41,29 +33,7 @@ static const std::vector<std::string> electrodeMap_208 = {
     "OZ",        "TRIGGER",   "SAMPLECOUNT"
 };
 
-static const std::vector<std::string> electrodeMap_203 = {
-    "Fp1",     "Fpz",     "Fp2",      "F7",       "F3",       "Fz",       "F4",
-    "F8",      "FC5",     "FC1",      "FC2",      "FC6",      "M1",       "T7",
-    "C3",      "Cz",      "C4",       "T8",       "M2",       "CP5",      "CP1",
-    "CP2",     "CP6",     "P7",       "P3",       "Pz",       "P4",       "P8",
-    "POz",     "O1",      "O2",       "HEOGR",    "AF7",      "AF3",      "AF4",
-    "AF8",     "F5",      "F1",       "F2",       "F6",       "FC3",      "FCz",
-    "FC4",     "C5",      "C1",       "C2",       "C6",       "CP3",      "CP4",
-    "P5",      "P1",      "P2",       "P6",       "HEOGL",   "PO3",      "PO4",
-    "VEOGU",   "FT7",     "FT8",      "TP7",      "TP8",      "PO7",      "PO8",
-    "VEOGL",   "FT9",     "FT10",     "TPP9h",    "TPP10h",   "PO9",      "PO10",
-    "P9",      "P10",     "AFF1",     "AFz",      "AFF2",     "FFC5h",    "FFC3h",
-    "FFC4h",   "FFC6h",   "FCC5h",    "FCC3h",    "FCC4h",    "FCC6h",    "CCP5h",
-    "CCP3h",   "CCP4h",   "CCP6h",    "CPP5h",    "CPP3h",    "CPP4h",    "CPP6h",
-    "PPO1",    "PPO2",    "I1",       "Iz",       "I2",       "AFP3h",    "AFP4h",
-    "AFF5h",   "AFF6h",   "FFT7h",    "FFC1h",    "FFC2h",    "FFT8h",    "FTT9h",
-    "FTT7h",   "FCC1h",   "FCC2h",    "FTT8h",    "FTT10h",   "TTP7h",    "CCP1h",
-    "CCP2h",   "TTP8h",   "TPP7h",    "CPP1h",    "CPP2h",    "TPP8h",    "PPO9h",
-    "PPO5h",   "PPO6h",   "PPO10h",   "POO9h",    "POO3h",    "POO4h",    "POO10h",
-    "OI1h",    "OI2h",    "TRIGGER",  "SAMPLECOUNT"
-};
-
-static const std::vector<std::string> electrodeMap_64 = {
+static const std::vector<std::string> electrodeMap_64_no_labels = {
     "Ch1",      "Ch2",      "Ch3",      "Ch4",      "Ch5",      "Ch6",      "Ch7",
     "Ch8",      "Ch9",      "Ch10",     "Ch11",     "Ch12",     "Ch13",     "Ch14",
     "Ch15",     "Ch16",     "Ch17",     "Ch18",     "Ch19",     "Ch20",     "Ch21",
@@ -74,28 +44,6 @@ static const std::vector<std::string> electrodeMap_64 = {
     "Ch50",     "Ch51",     "Ch52",     "Ch53",     "Ch54",     "Ch55",     "Ch56",
     "Ch57",     "Ch58",     "Ch59",     "Ch60",     "Ch61",     "Ch62",     "Ch63",
     "Ch64",     "TRIGGER",  "SAMPLECOUNT"
-};
-
-static const std::vector<std::string> electrodeMap_128 = {
-    "Ch1",      "Ch2",      "Ch3",      "Ch4",      "Ch5",      "Ch6",      "Ch7",
-    "Ch8",      "Ch9",      "Ch10",     "Ch11",     "Ch12",     "Ch13",     "Ch14",
-    "Ch15",     "Ch16",     "Ch17",     "Ch18",     "Ch19",     "Ch20",     "Ch21",
-    "Ch22",     "Ch23",     "Ch24",     "Ch25",     "Ch26",     "Ch27",     "Ch28",
-    "Ch29",     "Ch30",     "Ch31",     "Ch32",     "Ch33",     "Ch34",     "Ch35",
-    "Ch36",     "Ch37",     "Ch38",     "Ch39",     "Ch40",     "Ch41",     "Ch42",
-    "Ch43",     "Ch44",     "Ch45",     "Ch46",     "Ch47",     "Ch48",     "Ch49",
-    "Ch50",     "Ch51",     "Ch52",     "Ch53",     "Ch54",     "Ch55",     "Ch56",
-    "Ch57",     "Ch58",     "Ch59",     "Ch60",     "Ch61",     "Ch62",     "Ch63",
-    "Ch64",     "Ch65",     "Ch66",     "Ch67",     "Ch68",     "Ch69",     "Ch70",
-    "Ch71",     "Ch72",     "Ch73",     "Ch74",     "Ch75",     "Ch76",     "Ch77",
-    "Ch78",     "Ch79",     "Ch80",     "Ch81",     "Ch82",     "Ch83",     "Ch84",
-    "Ch85",     "Ch86",     "Ch87",     "Ch88",     "Ch89",     "Ch90",     "Ch91",
-    "Ch92",     "Ch93",     "Ch94",     "Ch95",     "Ch96",     "Ch97",     "Ch98",
-    "Ch99",     "Ch100",    "Ch101",    "Ch102",    "Ch103",    "Ch104",    "Ch105",
-    "Ch106",    "Ch107",    "Ch108",    "Ch109",    "Ch110",    "Ch111",    "Ch112",
-    "Ch113",    "Ch114",    "Ch115",    "Ch116",    "Ch117",    "Ch118",    "Ch119",
-    "Ch120",    "Ch121",    "Ch122",    "Ch123",    "Ch124",    "Ch125",    "Ch126",
-    "Ch127",    "Ch128",    "TRIGGER",  "SAMPLECOUNT"
 };
 
 static const std::vector<std::string> electrodeMap_bip = {
@@ -115,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
     if(!config_file.empty())
         load_config(config_file);
     else
-        ui.Cap_ID->setCurrentIndex(1);
+        ui.Cap_ID->setCurrentIndex(0);
         ui.samplingRate->setCurrentIndex(1);
         ui.EEG_Range->setCurrentIndex(0);
         ui.BIP_Range->setCurrentIndex(2);
@@ -164,7 +112,7 @@ void MainWindow::load_config(const std::string &filename) {
 
     // get config values
     try {
-        ui.Cap_ID->setCurrentIndex(pt.get<int>("settings.capId", 1));
+        ui.Cap_ID->setCurrentIndex(pt.get<int>("settings.capId", 0));
         ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
         ui.EEG_Range->setCurrentIndex(pt.get<int>("settings.EegRange", 0));
         ui.BIP_Range->setCurrentIndex(pt.get<int>("settings.BipRange", 2));
@@ -314,16 +262,9 @@ void Reader::setParams(int capId, int samplingRate, double BipRange, double EegR
 
     // Define the proper channels layout
     if (capId == 0)
-        this->capLayout = electrodeMap_209;
-    else if (capId == 1) {
-        this->capLayout = electrodeMap_208;
-    }
-    else if (capId == 2)
-        this->capLayout = electrodeMap_203;
-    else if (capId == 3)
         this->capLayout = electrodeMap_64;
-    else if (capId == 4)
-        this->capLayout = electrodeMap_128;
+    else if (capId == 1)
+        this->capLayout = electrodeMap_64_no_labels;
 
     // other amplifiers parameters
     this->samplingRate = samplingRate;

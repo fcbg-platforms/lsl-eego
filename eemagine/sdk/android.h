@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2018, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2015, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -25,90 +25,18 @@
  * Please be especially advised that any certification holding for the eego amplifier is not valid for a combined system of your application software and the eego amplifier. You must obtain your own certification for a combined system of amplifier and software.
  */
 
-#ifndef __eemagine_sdk_channel_h__
-#define __eemagine_sdk_channel_h__
+#ifndef __eemagine_sdk_android_h__
+#define __eemagine_sdk_android_h__
 
-// system
-#include <ostream>
+#include <eemagine/sdk/visibility.h>
 
-namespace eemagine {
-	namespace sdk {
-		class channel {
-		public:
-			/**
-			 * type of channel
-			 */
-			enum channel_type { none, reference, bipolar, trigger, sample_counter, impedance_reference, impedance_ground, accelerometer, gyroscope, magnetometer };
-
-			/**
-			* \brief default constructor
-			*/
-			channel() : _index(0), _type(none) { }
-			channel(unsigned int index, channel_type type) : _index(index), _type(type) { }
-
-			/**
-			* \brief get this channel's index
-			* #return this channel's index
-			*/
-			unsigned int getIndex() const { return _index; }
-			/**
-			* \brief get this channel's type
-			* #return this channel's type
-			*/
-			channel_type getType() const { return _type; }
-
-			bool operator==(const channel& other) const { return _type == other._type; } // Just the type is interesting, the index can be anything
-			bool operator!=(const channel& other) const { return !operator==(other); }
-
-		protected:
-			unsigned int _index;
-			channel_type _type;
-		};
-	}
+#ifdef __cplusplus
+extern "C" {
+#endif
+  EEGO_SDK_API void eego_sdk_android_attach_fd(int);
+  EEGO_SDK_API void eego_sdk_android_detach_fd(int);
+#ifdef __cplusplus
 }
-
-// conversion for writing the channel into an ostream.
-inline
-std::ostream &
-operator<<(std::ostream &out, const eemagine::sdk::channel &c) {
-	out << "channel(";
-	out << c.getIndex();
-	out << ", ";
-	switch (c.getType()) {
-	case eemagine::sdk::channel::reference:
-		out << "reference";
-		break;
-	case eemagine::sdk::channel::bipolar:
-		out << "bipolar";
-		break;
-	case eemagine::sdk::channel::trigger:
-		out << "trigger";
-		break;
-	case eemagine::sdk::channel::sample_counter:
-		out << "sample_counter";
-		break;
-	case eemagine::sdk::channel::impedance_reference:
-		out << "impedance_reference";
-		break;
-	case eemagine::sdk::channel::impedance_ground:
-		out << "impedance_ground";
-		break;
-	case eemagine::sdk::channel::accelerometer:
-		out << "accel";
-		break;
-	case eemagine::sdk::channel::gyroscope:
-		out << "gyro";
-		break;
-	case eemagine::sdk::channel::magnetometer:
-		out << "magneto";
-		break;
-	default:
-		out << "?";
-		break;
-	}
-	out << ")";
-
-	return out;
-}
+#endif
 
 #endif

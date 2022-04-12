@@ -13,6 +13,7 @@
 
 #include <fstream>
 #include <bitset>
+#include <iostream>
 
 using namespace eemagine::sdk;
 

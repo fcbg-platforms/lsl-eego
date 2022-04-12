@@ -34,7 +34,7 @@ HEADERS +=  mainwindow.h \
 FORMS += mainwindow.ui
 
 unix:!macx: {
-    LIBS += -leego-SDK -ldl -llsl64 -lboost_thread
+    LIBS += -leego-SDK -ldl -llsl -lboost_thread -lboost_clock
 }
 
 win32: {

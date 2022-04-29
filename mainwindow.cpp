@@ -140,7 +140,7 @@ void MainWindow::load_config(const std::string &filename) {
 
         std::string tmp = pt.get<std::string>("settings.hexEegMask", "0xFFFFFFFFFFFFFFFF");
         ui.EEG_LineEdit->setText(QString::fromStdString(tmp));
-        tmp = pt.get<std::string>("settings.hexBipMask", "0xFFFFFFFFFFFF");
+        tmp = pt.get<std::string>("settings.hexBipMask", "0x000000000000");
         ui.BIP_LineEdit->setText(QString::fromStdString(tmp));
     }
     catch (std::exception &) {
@@ -349,7 +349,7 @@ void Reader::read() {
         lsl::stream_info data_info("eegoSports " + amp->getSerialNumber(), "EEG", static_cast<int32_t>(channelList.size()) - 1, samplingRate, lsl::cf_double64, "eegoSports_" + amp->getSerialNumber());
         lsl::xml_element channels = data_info.desc().append_child("channels");
 
-        // convert the eeg mask to a bits array for ch labelling
+        // ignore the EEG mask and use all EEG channels
         for (unsigned int k = 0; k < 128; k++) {
             std::string ch_name = this->capLayout.at(k);
             channels.append_child("channel")
@@ -358,13 +358,15 @@ void Reader::read() {
                     .append_child_value("unit", "uV");
         }
         // convert the bip mask to a bits array for ch labelling
-        for (unsigned int k = 0; k < 48; k++) {
-            std::string ch_name = electrodeMap_bip.at(k);
-            channels.append_child("channel")
-                    .append_child_value("label", ch_name)
-                    .append_child_value("type", "AUX")
-                    .append_child_value("unit", "uV");
-        }
+        std::bitset<48> hexBipMask_bits(this->hexBipMask);
+        for (unsigned int k = 0; k < static_cast<unsigned int>(hexBipMask_bits.size()); k++) {
+            if (hexBipMask_bits[k] == 1) {
+                std::string ch_name = electrodeMap_bip.at(k);
+                channels.append_child("channel")
+                        .append_child_value("label", ch_name)
+                        .append_child_value("type", "AUX")
+                        .append_child_value("unit", "uV");
+            }
 
         channels.append_child("channel")
                 .append_child_value("label", "TRIGGER")

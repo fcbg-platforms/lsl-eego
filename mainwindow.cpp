@@ -367,6 +367,7 @@ void Reader::read() {
                         .append_child_value("type", "AUX")
                         .append_child_value("unit", "uV");
             }
+        }
 
         channels.append_child("channel")
                 .append_child_value("label", "TRIGGER")

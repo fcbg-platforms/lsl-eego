@@ -205,7 +205,7 @@
          <item row="5" column="1">
           <widget class="QLineEdit" name="BIP_LineEdit">
            <property name="text">
-            <string>0xFFFFFF</string>
+            <string>0xFFFFFFFFFFFF</string>
            </property>
           </widget>
          </item>

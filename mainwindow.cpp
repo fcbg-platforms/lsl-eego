@@ -140,7 +140,7 @@ void MainWindow::load_config(const std::string &filename) {
 
         std::string tmp = pt.get<std::string>("settings.hexEegMask", "0xFFFFFFFFFFFFFFFF");
         ui.EEG_LineEdit->setText(QString::fromStdString(tmp));
-        tmp = pt.get<std::string>("settings.hexBipMask", "0xFFFFFF");
+        tmp = pt.get<std::string>("settings.hexBipMask", "0xFFFFFFFFFFFF");
         ui.BIP_LineEdit->setText(QString::fromStdString(tmp));
     }
     catch (std::exception &) {

@@ -350,26 +350,20 @@ void Reader::read() {
         lsl::xml_element channels = data_info.desc().append_child("channels");
 
         // convert the eeg mask to a bits array for ch labelling
-        std::bitset<64> hexEegMask_bits(this->hexEegMask);
-        for (unsigned int k = 0; k < static_cast<unsigned int>(hexEegMask_bits.size()); k++) {
-            if (hexEegMask_bits[k] == 1) {
-                std::string ch_name = this->capLayout.at(k);
-                channels.append_child("channel")
-                        .append_child_value("label", ch_name)
-                        .append_child_value("type", "EEG")
-                        .append_child_value("unit", "uV");
-            }
+        for (unsigned int k = 0; k < 128; k++) {
+            std::string ch_name = this->capLayout.at(k);
+            channels.append_child("channel")
+                    .append_child_value("label", ch_name)
+                    .append_child_value("type", "EEG")
+                    .append_child_value("unit", "uV");
         }
         // convert the bip mask to a bits array for ch labelling
-        std::bitset<24> hexBipMask_bits(this->hexBipMask);
-        for (unsigned int k = 0; k < static_cast<unsigned int>(hexBipMask_bits.size()); k++) {
-            if (hexBipMask_bits[k] == 1) {
-                std::string ch_name = electrodeMap_bip.at(k);
-                channels.append_child("channel")
-                        .append_child_value("label", ch_name)
-                        .append_child_value("type", "AUX")
-                        .append_child_value("unit", "uV");
-            }
+        for (unsigned int k = 0; k < 48; k++) {
+            std::string ch_name = electrodeMap_bip.at(k);
+            channels.append_child("channel")
+                    .append_child_value("label", ch_name)
+                    .append_child_value("type", "AUX")
+                    .append_child_value("unit", "uV");
         }
 
         channels.append_child("channel")

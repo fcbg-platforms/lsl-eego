@@ -8,12 +8,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/chrono.hpp>
 
 #include <fstream>
 #include <bitset>
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 using namespace eemagine::sdk;
 
@@ -432,7 +432,7 @@ void Reader::read() {
         while (!stop) {
 
             //Sleep(8);
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(8));
+            std::this_thread::sleep_for(std::chrono::milliseconds(8));
 
             buffer = eegStream->getData();
             unsigned int channelCount = buffer.getChannelCount();

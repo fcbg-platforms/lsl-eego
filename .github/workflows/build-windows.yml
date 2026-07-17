@@ -24,13 +24,12 @@ jobs:
           version: '6.6.3'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2022_64'
+          arch: 'win64_msvc2019_64'
 
       - name: Resolve Qt tools (qmake/windeployqt)
         shell: powershell
         run: |
           $candidates = @(
-            "$env:RUNNER_WORKSPACE\Qt\6.6.3\msvc2022_64\bin",
             "$env:RUNNER_WORKSPACE\Qt\6.6.3\msvc2019_64\bin",
             "$env:Qt6_DIR\bin"
           )

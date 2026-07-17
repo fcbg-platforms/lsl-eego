@@ -15,7 +15,7 @@ TEMPLATE = app
 # any feature of Qt which has been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += QT_DEPRECATED_WARNINGS EEGO_SDK_BIND_STATIC _UNICODE UNICODE
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -34,12 +34,12 @@ HEADERS +=  mainwindow.h \
 FORMS += mainwindow.ui
 
 unix:!macx: {
-    LIBS += -leego-SDK -ldl -llsl -lboost_thread -lboost_chrono
+    LIBS += -leego-SDK -ldl -llsl
 }
 
 win32: {
-    INCLUDEPATH += $(BOOST_ROOT) \
-                   quote($$LSL_DIR/include)
+    INCLUDEPATH += $$quote($$(BOOST_ROOT)) \
+                   $$quote($$(LSL_DIR)/include)
     LIBS += -L$$quote($$PWD) -leego-SDK \
             -L$$quote($$(LSL_DIR)/lib) -llsl
 }

@@ -1,0 +1,128 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.29
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.6.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      - name: Resolve Qt tools (qmake/windeployqt)
+        shell: powershell
+        run: |
+          $candidates = @(
+            "$env:RUNNER_WORKSPACE\Qt\6.6.3\msvc2019_64\bin",
+            "$env:Qt6_DIR\bin"
+          )
+
+          $qtBin = $null
+          foreach ($candidate in $candidates) {
+            if ($candidate -and (Test-Path (Join-Path $candidate 'qmake.exe'))) {
+              $qtBin = $candidate
+              break
+            }
+          }
+
+          if (-not $qtBin) {
+            throw 'Could not locate Qt MSVC qmake.exe.'
+          }
+
+          "QT_QMAKE=$(Join-Path $qtBin 'qmake.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "QT_WINDEPLOYQT=$(Join-Path $qtBin 'windeployqt.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install Boost headers
+        shell: powershell
+        run: |
+          choco install boost-msvc-14.3 --yes --no-progress
+          $boostDir = Get-ChildItem -Path C:\local -Directory -Filter "boost_*" | Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $boostDir) { throw 'Boost installation directory not found under C:\local' }
+          "BOOST_ROOT=$($boostDir.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install OpenSSL
+        shell: powershell
+        run: |
+          choco install openssl.light --yes --no-progress
+
+      - name: Build and install liblsl
+        shell: powershell
+        run: |
+          git clone --depth 1 --branch v1.16.2 https://github.com/sccn/liblsl.git liblsl
+          cmake -S liblsl -B liblsl\build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD\liblsl-install"
+          cmake --build liblsl\build --config Release
+          cmake --install liblsl\build --config Release
+          "LSL_DIR=$PWD\liblsl-install" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Decrypt Windows SDK
+        shell: powershell
+        env:
+          SDK_DECRYPT_PASSPHRASE: ${{ secrets.SDK_DECRYPT_PASSPHRASE }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SDK_DECRYPT_PASSPHRASE)) {
+            throw 'Missing GitHub secret SDK_DECRYPT_PASSPHRASE.'
+          }
+
+          if (-not (Test-Path .\eego-SDK.lib.enc)) { throw 'Missing encrypted file .\eego-SDK.lib.enc' }
+          if (-not (Test-Path .\eego-SDK.dll.enc)) { throw 'Missing encrypted file .\eego-SDK.dll.enc' }
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.lib.enc -out .\eego-SDK.lib -pass pass:$env:SDK_DECRYPT_PASSPHRASE
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.dll.enc -out .\eego-SDK.dll -pass pass:$env:SDK_DECRYPT_PASSPHRASE
+
+      - name: Setup MSVC environment (build step)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.29
+
+      - name: Configure and build (qmake + nmake)
+        shell: powershell
+        run: |
+          if (Test-Path .\build-windows) { Remove-Item .\build-windows -Recurse -Force }
+          New-Item -ItemType Directory -Path build-windows -Force | Out-Null
+          Copy-Item .\eego-SDK.lib .\build-windows\eego-SDK.lib -Force
+          Push-Location build-windows
+          & "$env:QT_QMAKE" QMAKE_MSC_VER=1929 CONFIG+=release ..\eegoSports.pro
+          nmake
+          Pop-Location
+
+      - name: Collect and deploy executable
+        shell: powershell
+        run: |
+          $exe = Get-ChildItem -Path build-windows -Recurse -File -Filter eegoSports.exe | Select-Object -First 1
+          if (-not $exe) { throw 'eegoSports.exe not found after build.' }
+
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Copy-Item $exe.FullName dist\eegoSports.exe -Force
+
+          Copy-Item .\eego-SDK.dll dist\eego-SDK.dll -Force
+
+          $lslDll = Get-ChildItem -Path "$PWD\liblsl-install" -Recurse -File -Filter lsl.dll | Select-Object -First 1
+          if (-not $lslDll) { throw 'lsl.dll not found under liblsl-install.' }
+          Copy-Item $lslDll.FullName dist\lsl.dll -Force
+
+          & "$env:QT_WINDEPLOYQT" --release --no-translations dist\eegoSports.exe
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eegoSports-windows
+          path: dist/

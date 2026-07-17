@@ -1,0 +1,120 @@
+name: Build Linux AppImage
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build-linux-appimage:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libboost-all-dev \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            libxcb-cursor0 \
+            openssl \
+            qt6-base-dev \
+            qt6-tools-dev-tools \
+            qmake6 \
+            patchelf \
+            wget
+
+      - name: Build and install liblsl
+        run: |
+          git clone --depth 1 --branch v1.16.2 https://github.com/sccn/liblsl.git liblsl
+          cmake -S liblsl -B liblsl/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build liblsl/build -j"$(nproc)"
+          sudo cmake --install liblsl/build
+          sudo ldconfig
+
+      - name: Decrypt Linux SDK
+        env:
+          SDK_DECRYPT_PASSPHRASE: ${{ secrets.SDK_DECRYPT_PASSPHRASE }}
+        run: |
+          if [ -z "${SDK_DECRYPT_PASSPHRASE}" ]; then
+            echo "Missing GitHub secret SDK_DECRYPT_PASSPHRASE."
+            exit 1
+          fi
+
+          if [ ! -f ./libeego-SDK.so.enc ]; then
+            echo "Missing encrypted file libeego-SDK.so.enc"
+            exit 1
+          fi
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in ./libeego-SDK.so.enc \
+            -out ./libeego-SDK.so \
+            -pass pass:"${SDK_DECRYPT_PASSPHRASE}"
+
+      - name: Register eego SDK for linker
+        run: |
+          sudo ln -sf "$GITHUB_WORKSPACE/libeego-SDK.so" /usr/lib/libeego-SDK.so
+          ls -l /usr/lib/libeego-SDK.so
+
+      - name: Configure and build (qmake + make)
+        run: |
+          rm -rf build-linux
+          mkdir -p build-linux
+          cd build-linux
+          qmake6 ../eegoSports.pro CONFIG+=release
+          make -j"$(nproc)"
+
+      - name: Create desktop file
+        run: |
+          cat > eegoSports.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=eegoSports
+          Exec=eegoSports
+          Icon=eegoSports
+          Categories=Science;
+          EOF
+
+      - name: Prepare AppImage icon
+        run: |
+          if [ ! -f ./resources/favicon_neuro.png ]; then
+            echo "Missing ./resources/favicon_neuro.png for AppImage icon."
+            exit 1
+          fi
+          cp ./resources/favicon_neuro.png ./eegoSports.png
+
+      - name: Build AppImage
+        run: |
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE=qmake6
+          wget -O linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -O linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy.AppImage
+          chmod +x linuxdeploy-plugin-qt.AppImage
+
+          ./linuxdeploy.AppImage \
+            --appdir AppDir \
+            -e build-linux/eegoSports \
+            -d eegoSports.desktop \
+            -i eegoSports.png \
+            --library ./libeego-SDK.so \
+            --library /usr/local/lib/liblsl.so \
+            --plugin qt \
+            --output appimage
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eegoSports-linux
+          path: |
+            ./*.AppImage
+            build-linux/eegoSports

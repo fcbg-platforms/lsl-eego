@@ -24,7 +24,31 @@ jobs:
           version: '6.6.3'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2019_64'
+          arch: 'win64_msvc2022_64'
+
+      - name: Resolve Qt tools (qmake/windeployqt)
+        shell: powershell
+        run: |
+          $candidates = @(
+            "$env:RUNNER_WORKSPACE\Qt\6.6.3\msvc2022_64\bin",
+            "$env:RUNNER_WORKSPACE\Qt\6.6.3\msvc2019_64\bin",
+            "$env:Qt6_DIR\bin"
+          )
+
+          $qtBin = $null
+          foreach ($candidate in $candidates) {
+            if ($candidate -and (Test-Path (Join-Path $candidate 'qmake.exe'))) {
+              $qtBin = $candidate
+              break
+            }
+          }
+
+          if (-not $qtBin) {
+            throw 'Could not locate Qt MSVC qmake.exe.'
+          }
+
+          "QT_QMAKE=$(Join-Path $qtBin 'qmake.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "QT_WINDEPLOYQT=$(Join-Path $qtBin 'windeployqt.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install Boost headers
         shell: powershell
@@ -63,6 +87,9 @@ jobs:
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.lib.enc -out .\eego-SDK.lib -pass pass:$env:SDK_DECRYPT_PASSPHRASE
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.dll.enc -out .\eego-SDK.dll -pass pass:$env:SDK_DECRYPT_PASSPHRASE
 
+      - name: Setup MSVC environment (build step)
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure and build (qmake + nmake)
         shell: powershell
         run: |
@@ -70,7 +97,7 @@ jobs:
           New-Item -ItemType Directory -Path build-windows -Force | Out-Null
           Copy-Item .\eego-SDK.lib .\build-windows\eego-SDK.lib -Force
           Push-Location build-windows
-          qmake ..\eegoSports.pro CONFIG+=release
+          & "$env:QT_QMAKE" ..\eegoSports.pro CONFIG+=release QMAKE_MSC_VER=1944
           nmake
           Pop-Location
 
@@ -89,7 +116,7 @@ jobs:
           if (-not $lslDll) { throw 'lsl.dll not found under liblsl-install.' }
           Copy-Item $lslDll.FullName dist\lsl.dll -Force
 
-          windeployqt --release --no-translations dist\eegoSports.exe
+          & "$env:QT_WINDEPLOYQT" --release --no-translations dist\eegoSports.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4

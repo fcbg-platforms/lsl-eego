@@ -38,7 +38,7 @@ unix:!macx: {
 }
 
 win32: {
-    INCLUDEPATH += $(BOOST_ROOT) \
+    INCLUDEPATH += $$quote($$(BOOST_ROOT)) \
                    $$quote($$(LSL_DIR)/include)
     LIBS += -L$$quote($$PWD) -leego-SDK \
             -L$$quote($$(LSL_DIR)/lib) -llsl

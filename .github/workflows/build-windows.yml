@@ -1,0 +1,84 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.6.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      - name: Install Boost headers
+        shell: powershell
+        run: |
+          choco install boost-msvc-14.3 --yes --no-progress
+          $boostDir = Get-ChildItem -Path C:\local -Directory -Filter "boost_*" | Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $boostDir) { throw 'Boost installation directory not found under C:\local' }
+          "BOOST_ROOT=$($boostDir.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build and install liblsl
+        shell: powershell
+        run: |
+          git clone --depth 1 --branch v1.16.2 https://github.com/sccn/liblsl.git liblsl
+          cmake -S liblsl -B liblsl\build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD\liblsl-install"
+          cmake --build liblsl\build --config Release
+          cmake --install liblsl\build --config Release
+          "LSL_DIR=$PWD\liblsl-install" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Ensure Windows eego SDK exists
+        shell: powershell
+        run: |
+          if (-not (Test-Path .\eego-SDK.lib)) { throw 'Missing .\eego-SDK.lib in repository root.' }
+          if (-not (Test-Path .\eego-SDK.dll)) { throw 'Missing .\eego-SDK.dll in repository root.' }
+
+      - name: Configure and build (qmake + nmake)
+        shell: powershell
+        run: |
+          if (Test-Path .\build-windows) { Remove-Item .\build-windows -Recurse -Force }
+          New-Item -ItemType Directory -Path build-windows -Force | Out-Null
+          Copy-Item .\eego-SDK.lib .\build-windows\eego-SDK.lib -Force
+          Push-Location build-windows
+          qmake ..\eegoSports.pro CONFIG+=release
+          nmake
+          Pop-Location
+
+      - name: Collect and deploy executable
+        shell: powershell
+        run: |
+          $exe = Get-ChildItem -Path build-windows -Recurse -File -Filter eegoSports.exe | Select-Object -First 1
+          if (-not $exe) { throw 'eegoSports.exe not found after build.' }
+
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Copy-Item $exe.FullName dist\eegoSports.exe -Force
+
+          Copy-Item .\eego-SDK.dll dist\eego-SDK.dll -Force
+
+          $lslDll = Get-ChildItem -Path "$PWD\liblsl-install" -Recurse -File -Filter lsl.dll | Select-Object -First 1
+          if (-not $lslDll) { throw 'lsl.dll not found under liblsl-install.' }
+          Copy-Item $lslDll.FullName dist\lsl.dll -Force
+
+          windeployqt --release --no-translations dist\eegoSports.exe
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eegoSports-windows
+          path: dist/

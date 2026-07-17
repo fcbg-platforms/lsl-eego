@@ -34,6 +34,11 @@ jobs:
           if (-not $boostDir) { throw 'Boost installation directory not found under C:\local' }
           "BOOST_ROOT=$($boostDir.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Install OpenSSL
+        shell: powershell
+        run: |
+          choco install openssl.light --yes --no-progress
+
       - name: Build and install liblsl
         shell: powershell
         run: |
@@ -43,11 +48,20 @@ jobs:
           cmake --install liblsl\build --config Release
           "LSL_DIR=$PWD\liblsl-install" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Ensure Windows eego SDK exists
+      - name: Decrypt Windows SDK
         shell: powershell
+        env:
+          SDK_DECRYPT_PASSPHRASE: ${{ secrets.SDK_DECRYPT_PASSPHRASE }}
         run: |
-          if (-not (Test-Path .\eego-SDK.lib)) { throw 'Missing .\eego-SDK.lib in repository root.' }
-          if (-not (Test-Path .\eego-SDK.dll)) { throw 'Missing .\eego-SDK.dll in repository root.' }
+          if ([string]::IsNullOrWhiteSpace($env:SDK_DECRYPT_PASSPHRASE)) {
+            throw 'Missing GitHub secret SDK_DECRYPT_PASSPHRASE.'
+          }
+
+          if (-not (Test-Path .\eego-SDK.lib.enc)) { throw 'Missing encrypted file .\eego-SDK.lib.enc' }
+          if (-not (Test-Path .\eego-SDK.dll.enc)) { throw 'Missing encrypted file .\eego-SDK.dll.enc' }
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.lib.enc -out .\eego-SDK.lib -pass pass:$env:SDK_DECRYPT_PASSPHRASE
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.dll.enc -out .\eego-SDK.dll -pass pass:$env:SDK_DECRYPT_PASSPHRASE
 
       - name: Configure and build (qmake + nmake)
         shell: powershell

@@ -17,6 +17,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.29
 
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
@@ -88,6 +90,8 @@ jobs:
 
       - name: Setup MSVC environment (build step)
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.29
 
       - name: Configure and build (qmake + nmake)
         shell: powershell
@@ -96,7 +100,7 @@ jobs:
           New-Item -ItemType Directory -Path build-windows -Force | Out-Null
           Copy-Item .\eego-SDK.lib .\build-windows\eego-SDK.lib -Force
           Push-Location build-windows
-          & "$env:QT_QMAKE" ..\eegoSports.pro CONFIG+=release QMAKE_MSC_VER=1944
+          & "$env:QT_QMAKE" QMAKE_MSC_VER=1929 CONFIG+=release ..\eegoSports.pro
           nmake
           Pop-Location
 

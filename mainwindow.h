@@ -15,7 +15,6 @@
 
 // eegoSports
 #define WIN32_LEAN_AND_MEAN
-#define EEGO_SDK_BIND_STATIC
 
 #ifdef _WIN32
 #include <Windows.h>

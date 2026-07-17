@@ -34,12 +34,12 @@ HEADERS +=  mainwindow.h \
 FORMS += mainwindow.ui
 
 unix:!macx: {
-    LIBS += -leego-SDK -ldl -llsl -lboost_thread -lboost_chrono
+    LIBS += -leego-SDK -ldl -llsl
 }
 
 win32: {
-    INCLUDEPATH += $(BOOST_ROOT) \
-                   quote($$LSL_DIR/include)
+    INCLUDEPATH += $$quote($$(BOOST_ROOT)) \
+                   $$quote($$(LSL_DIR)/include)
     LIBS += -L$$quote($$PWD) -leego-SDK \
             -L$$quote($$(LSL_DIR)/lib) -llsl
 }

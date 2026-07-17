@@ -4,15 +4,14 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/chrono.hpp>
 
 #include <fstream>
 #include <bitset>
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 using namespace eemagine::sdk;
 
@@ -417,13 +416,13 @@ void Reader::read() {
 
         data_info.desc().append_child("acquisition")
                 .append_child_value("manufacturer", "antneuro")
-                .append_child_value("serial_number", boost::lexical_cast<std::string>(amp->getSerialNumber()).c_str());
+            .append_child_value("serial_number", amp->getSerialNumber().c_str());
 
         // make a data outlet
         lsl::stream_outlet data_outlet(data_info);
 
         // create marker streaminfo and outlet
-        lsl::stream_info marker_info("eegoSports-" + amp->getSerialNumber() + "_markers", "Markers", 1, 0, lsl::cf_string, "eegoSports_" + boost::lexical_cast<std::string>(amp->getSerialNumber()) + "_markers");
+        lsl::stream_info marker_info("eegoSports-" + amp->getSerialNumber() + "_markers", "Markers", 1, 0, lsl::cf_string, "eegoSports_" + amp->getSerialNumber() + "_markers");
         lsl::stream_outlet marker_outlet(marker_info);
 
         std::vector<channel> eegChannelList = eegStream->getChannelList();
@@ -432,7 +431,7 @@ void Reader::read() {
         while (!stop) {
 
             //Sleep(8);
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(8));
+            std::this_thread::sleep_for(std::chrono::milliseconds(8));
 
             buffer = eegStream->getData();
             unsigned int channelCount = buffer.getChannelCount();
@@ -459,7 +458,7 @@ void Reader::read() {
                 //if (int mrk = src_buffer[channelCount + s*(channelCount + 1)]) {
                 double mrk = buffer.getSample(channelCount - 1, s);
                 if (mrk != last_mrk) {
-                    std::string mrk_string = boost::lexical_cast<std::string>(mrk);
+                    std::string mrk_string = std::to_string(mrk);
                     marker_outlet.push_sample(&mrk_string, now + (s + 1 - sampleCount) / static_cast<unsigned int>(samplingRate));
                     last_mrk = mrk;
                 }

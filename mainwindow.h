@@ -11,7 +11,7 @@
 #include <vector>
 
 // LSL API
-#include <LSL/lsl_cpp.h>
+#include <lsl/lsl_cpp.h>
 
 // eegoSports
 #define WIN32_LEAN_AND_MEAN

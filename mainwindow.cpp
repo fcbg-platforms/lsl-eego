@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "wrapper.cc"
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -13,6 +12,7 @@
 
 #include <fstream>
 #include <bitset>
+#include <iostream>
 
 using namespace eemagine::sdk;
 
@@ -111,13 +111,14 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
     ui.setupUi(this);
 
     // Init initial indexes
-    if(!config_file.empty())
+    if(!config_file.empty()) {
         load_config(config_file);
-    else
+    } else {
         ui.Cap_ID->setCurrentIndex(1);
         ui.samplingRate->setCurrentIndex(1);
         ui.EEG_Range->setCurrentIndex(0);
         ui.BIP_Range->setCurrentIndex(2);
+    }
 
 
     // make GUI connections
@@ -465,17 +466,17 @@ void Reader::read() {
             }
         }
     }
-    catch (exceptions::notFound) {
+    catch (const exceptions::notFound &) {
         ampFound = false;
         emit ampNotFound();
     }
-    catch (exceptions::notConnected) {
+    catch (const exceptions::notConnected &) {
         emit connectionLost();
     }
-    catch (exceptions::unknown) {
+    catch (const exceptions::unknown &) {
         emit unknownError();
     }
-    catch(std::exception &e) {
+    catch (const std::exception &e) {
         std::cout<<e.what()<<std::endl;
     }
     if (ampFound) {

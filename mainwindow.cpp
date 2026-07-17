@@ -20,28 +20,7 @@ using namespace eemagine::sdk;
 //---------------------------------------------------------------------------
 // Layouts
 //---------------------------------------------------------------------------
-static const std::vector<std::string> electrodeMap_209 =
-{"Fp1",       "Fpz",       "Fp2",      "F7",      "F3",       "Fz",       "F4",
- "F8",        "FC5",       "FC1",      "FC2",     "FC6",      "M1",       "T7",
- "C3",        "Cz",        "C4",       "T8",       "M2",      "CP5",      "CP1",
- "CP2",       "CP6",       "P7",       "P3",       "Pz",      "P4",       "P8",
- "POz",       "O1",        "Oz",       "O2",       "TRIGGER", "SAMPLECOUNT"
-};
-
-static const std::vector<std::string> electrodeMap_208 = {
-    "Fp1",       "Fpz",       "Fp2",       "F7",        "F3",        "Fz",        "F4",
-    "F8",        "FC5",       "FC1",       "FC2",       "FC6",       "M1",        "T7",
-    "C3",        "Cz",        "C4",        "T8",        "M2",        "CP5",       "CP1",
-    "CP2",       "CP6",       "P7",        "P3",        "Pz",        "P4",        "P8",
-    "POz",       "O1",        "O2",        "EOG",       "AF7",       "AF3",       "AF4",
-    "AF8",       "F5",        "F1",        "F2",        "F6",        "FC3",       "FCz",
-    "FC4",       "C5",        "C1",        "C2",        "C6",        "CP3",       "CP4",
-    "P5",        "P1",        "P2",        "P6",        "PO5",       "PO3",       "PO4",
-    "PO6",       "FT7",       "FT8",       "TP7",       "TP8",       "PO7",       "PO8",
-    "OZ",        "TRIGGER",   "SAMPLECOUNT"
-};
-
-static const std::vector<std::string> electrodeMap_203 = {
+static const std::vector<std::string> electrodeMap_128 = {
     "Fp1",     "Fpz",     "Fp2",      "F7",       "F3",       "Fz",       "F4",
     "F8",      "FC5",     "FC1",      "FC2",      "FC6",      "M1",       "T7",
     "C3",      "Cz",      "C4",       "T8",       "M2",       "CP5",      "CP1",
@@ -49,7 +28,7 @@ static const std::vector<std::string> electrodeMap_203 = {
     "POz",     "O1",      "O2",       "HEOGR",    "AF7",      "AF3",      "AF4",
     "AF8",     "F5",      "F1",       "F2",       "F6",       "FC3",      "FCz",
     "FC4",     "C5",      "C1",       "C2",       "C6",       "CP3",      "CP4",
-    "P5",      "P1",      "P2",       "P6",       "HEOGL",   "PO3",      "PO4",
+    "P5",      "P1",      "P2",       "P6",       "HEOGL",    "PO3",      "PO4",
     "VEOGU",   "FT7",     "FT8",      "TP7",      "TP8",      "PO7",      "PO8",
     "VEOGL",   "FT9",     "FT10",     "TPP9h",    "TPP10h",   "PO9",      "PO10",
     "P9",      "P10",     "AFF1",     "AFz",      "AFF2",     "FFC5h",    "FFC3h",
@@ -63,20 +42,7 @@ static const std::vector<std::string> electrodeMap_203 = {
     "OI1h",    "OI2h",    "TRIGGER",  "SAMPLECOUNT"
 };
 
-static const std::vector<std::string> electrodeMap_64 = {
-    "Ch1",      "Ch2",      "Ch3",      "Ch4",      "Ch5",      "Ch6",      "Ch7",
-    "Ch8",      "Ch9",      "Ch10",     "Ch11",     "Ch12",     "Ch13",     "Ch14",
-    "Ch15",     "Ch16",     "Ch17",     "Ch18",     "Ch19",     "Ch20",     "Ch21",
-    "Ch22",     "Ch23",     "Ch24",     "Ch25",     "Ch26",     "Ch27",     "Ch28",
-    "Ch29",     "Ch30",     "Ch31",     "Ch32",     "Ch33",     "Ch34",     "Ch35",
-    "Ch36",     "Ch37",     "Ch38",     "Ch39",     "Ch40",     "Ch41",     "Ch42",
-    "Ch43",     "Ch44",     "Ch45",     "Ch46",     "Ch47",     "Ch48",     "Ch49",
-    "Ch50",     "Ch51",     "Ch52",     "Ch53",     "Ch54",     "Ch55",     "Ch56",
-    "Ch57",     "Ch58",     "Ch59",     "Ch60",     "Ch61",     "Ch62",     "Ch63",
-    "Ch64",     "TRIGGER",  "SAMPLECOUNT"
-};
-
-static const std::vector<std::string> electrodeMap_128 = {
+static const std::vector<std::string> electrodeMap_128_no_labels = {
     "Ch1",      "Ch2",      "Ch3",      "Ch4",      "Ch5",      "Ch6",      "Ch7",
     "Ch8",      "Ch9",      "Ch10",     "Ch11",     "Ch12",     "Ch13",     "Ch14",
     "Ch15",     "Ch16",     "Ch17",     "Ch18",     "Ch19",     "Ch20",     "Ch21",
@@ -102,7 +68,10 @@ static const std::vector<std::string> electrodeMap_bip = {
     "AUX1",     "AUX2",     "AUX3",     "AUX4",     "AUX5",     "AUX6",     "AUX7",
     "AUX8",     "AUX9",     "AUX10",    "AUX11",    "AUX12",    "AUX13",    "AUX14",
     "AUX15",    "AUX16",    "AUX17",    "AUX18",    "AUX19",    "AUX20",    "AUX21",
-    "AUX22",    "AUX23",    "AUX24"
+    "AUX22",    "AUX23",    "AUX24",    "AUX25",    "AUX26",    "AUX27",    "AUX28",
+    "AUX29",    "AUX30",    "AUX31",    "AUX32",    "AUX33",    "AUX34",    "AUX35",
+    "AUX36",    "AUX37",    "AUX38",    "AUX39",    "AUX40",    "AUX41",    "AUX42",
+    "AUX43",    "AUX44",    "AUX45",    "AUX46",    "AUX47",    "AUX48"
 };
 
 
@@ -115,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
     if(!config_file.empty())
         load_config(config_file);
     else
-        ui.Cap_ID->setCurrentIndex(1);
+        ui.Cap_ID->setCurrentIndex(0);
         ui.samplingRate->setCurrentIndex(1);
         ui.EEG_Range->setCurrentIndex(0);
         ui.BIP_Range->setCurrentIndex(2);
@@ -164,14 +133,14 @@ void MainWindow::load_config(const std::string &filename) {
 
     // get config values
     try {
-        ui.Cap_ID->setCurrentIndex(pt.get<int>("settings.capId", 1));
+        ui.Cap_ID->setCurrentIndex(pt.get<int>("settings.capId", 0));
         ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
         ui.EEG_Range->setCurrentIndex(pt.get<int>("settings.EegRange", 0));
         ui.BIP_Range->setCurrentIndex(pt.get<int>("settings.BipRange", 2));
 
         std::string tmp = pt.get<std::string>("settings.hexEegMask", "0xFFFFFFFFFFFFFFFF");
         ui.EEG_LineEdit->setText(QString::fromStdString(tmp));
-        tmp = pt.get<std::string>("settings.hexBipMask", "0x000000");
+        tmp = pt.get<std::string>("settings.hexBipMask", "0xFFFFFFFFFFFF");
         ui.BIP_LineEdit->setText(QString::fromStdString(tmp));
     }
     catch (std::exception &) {
@@ -314,16 +283,9 @@ void Reader::setParams(int capId, int samplingRate, double BipRange, double EegR
 
     // Define the proper channels layout
     if (capId == 0)
-        this->capLayout = electrodeMap_209;
-    else if (capId == 1) {
-        this->capLayout = electrodeMap_208;
-    }
-    else if (capId == 2)
-        this->capLayout = electrodeMap_203;
-    else if (capId == 3)
-        this->capLayout = electrodeMap_64;
-    else if (capId == 4)
         this->capLayout = electrodeMap_128;
+    else if (capId == 1)
+        this->capLayout = electrodeMap_128_no_labels;
 
     // other amplifiers parameters
     this->samplingRate = samplingRate;
@@ -388,26 +350,20 @@ void Reader::read() {
         lsl::xml_element channels = data_info.desc().append_child("channels");
 
         // convert the eeg mask to a bits array for ch labelling
-        std::bitset<64> hexEegMask_bits(this->hexEegMask);
-        for (unsigned int k = 0; k < static_cast<unsigned int>(hexEegMask_bits.size()); k++) {
-            if (hexEegMask_bits[k] == 1) {
-                std::string ch_name = this->capLayout.at(k);
-                channels.append_child("channel")
-                        .append_child_value("label", ch_name)
-                        .append_child_value("type", "EEG")
-                        .append_child_value("unit", "uV");
-            }
+        for (unsigned int k = 0; k < 128; k++) {
+            std::string ch_name = this->capLayout.at(k);
+            channels.append_child("channel")
+                    .append_child_value("label", ch_name)
+                    .append_child_value("type", "EEG")
+                    .append_child_value("unit", "uV");
         }
         // convert the bip mask to a bits array for ch labelling
-        std::bitset<24> hexBipMask_bits(this->hexBipMask);
-        for (unsigned int k = 0; k < static_cast<unsigned int>(hexBipMask_bits.size()); k++) {
-            if (hexBipMask_bits[k] == 1) {
-                std::string ch_name = electrodeMap_bip.at(k);
-                channels.append_child("channel")
-                        .append_child_value("label", ch_name)
-                        .append_child_value("type", "AUX")
-                        .append_child_value("unit", "uV");
-            }
+        for (unsigned int k = 0; k < 48; k++) {
+            std::string ch_name = electrodeMap_bip.at(k);
+            channels.append_child("channel")
+                    .append_child_value("label", ch_name)
+                    .append_child_value("type", "AUX")
+                    .append_child_value("unit", "uV");
         }
 
         channels.append_child("channel")

@@ -1,0 +1,265 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+      - dev-action
+    tags:
+      - 'v*'
+  pull_request:
+
+env:
+  LSL_VERSION: v1.16.2
+  QT_VERSION: '6.6.3'
+
+jobs:
+  build-windows:
+    name: Windows (exe)
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      - name: Resolve Qt tools (qmake/windeployqt)
+        shell: powershell
+        run: |
+          $candidates = @(
+            "$env:RUNNER_WORKSPACE\Qt\$env:QT_VERSION\msvc2019_64\bin",
+            "$env:Qt6_DIR\bin"
+          )
+
+          $qtBin = $null
+          foreach ($candidate in $candidates) {
+            if ($candidate -and (Test-Path (Join-Path $candidate 'qmake.exe'))) {
+              $qtBin = $candidate
+              break
+            }
+          }
+
+          if (-not $qtBin) {
+            throw 'Could not locate Qt MSVC qmake.exe.'
+          }
+
+          "QT_QMAKE=$(Join-Path $qtBin 'qmake.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "QT_WINDEPLOYQT=$(Join-Path $qtBin 'windeployqt.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install Boost headers
+        shell: powershell
+        run: |
+          choco install boost-msvc-14.3 --yes --no-progress
+          $boostDir = Get-ChildItem -Path C:\local -Directory -Filter "boost_*" | Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $boostDir) { throw 'Boost installation directory not found under C:\local' }
+          "BOOST_ROOT=$($boostDir.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install OpenSSL
+        shell: powershell
+        run: |
+          choco install openssl.light --yes --no-progress
+
+      - name: Build and install liblsl
+        shell: powershell
+        run: |
+          git clone --depth 1 --branch $env:LSL_VERSION https://github.com/sccn/liblsl.git liblsl
+          cmake -S liblsl -B liblsl\build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD\liblsl-install"
+          cmake --build liblsl\build --config Release
+          cmake --install liblsl\build --config Release
+          "LSL_DIR=$PWD\liblsl-install" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Decrypt Windows SDK
+        shell: powershell
+        env:
+          SDK_DECRYPT_PASSPHRASE: ${{ secrets.SDK_DECRYPT_PASSPHRASE }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SDK_DECRYPT_PASSPHRASE)) {
+            throw 'Missing GitHub secret SDK_DECRYPT_PASSPHRASE.'
+          }
+
+          if (-not (Test-Path .\eego-SDK.lib.enc)) { throw 'Missing encrypted file .\eego-SDK.lib.enc' }
+          if (-not (Test-Path .\eego-SDK.dll.enc)) { throw 'Missing encrypted file .\eego-SDK.dll.enc' }
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.lib.enc -out .\eego-SDK.lib -pass pass:$env:SDK_DECRYPT_PASSPHRASE
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in .\eego-SDK.dll.enc -out .\eego-SDK.dll -pass pass:$env:SDK_DECRYPT_PASSPHRASE
+
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.29
+
+      - name: Configure and build (qmake + nmake)
+        shell: powershell
+        run: |
+          if (Test-Path .\build-windows) { Remove-Item .\build-windows -Recurse -Force }
+          New-Item -ItemType Directory -Path build-windows -Force | Out-Null
+          Copy-Item .\eego-SDK.lib .\build-windows\eego-SDK.lib -Force
+          Push-Location build-windows
+          & "$env:QT_QMAKE" QMAKE_MSC_VER=1929 CONFIG+=release ..\eegoSports.pro
+          if ($LASTEXITCODE -ne 0) { throw 'qmake failed' }
+          nmake
+          if ($LASTEXITCODE -ne 0) { throw 'nmake failed' }
+          Pop-Location
+
+      - name: Collect and deploy executable
+        shell: powershell
+        run: |
+          $exe = Get-ChildItem -Path build-windows -Recurse -File -Filter eegoSports.exe | Select-Object -First 1
+          if (-not $exe) { throw 'eegoSports.exe not found after build.' }
+
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Copy-Item $exe.FullName dist\eegoSports.exe -Force
+          Copy-Item .\eego-SDK.dll dist\eego-SDK.dll -Force
+          Copy-Item .\eegoSports_config.cfg dist\eegoSports_config.cfg -Force
+
+          $lslDll = Get-ChildItem -Path "$PWD\liblsl-install" -Recurse -File -Filter lsl.dll | Select-Object -First 1
+          if (-not $lslDll) { throw 'lsl.dll not found under liblsl-install.' }
+          Copy-Item $lslDll.FullName dist\lsl.dll -Force
+
+          & "$env:QT_WINDEPLOYQT" --release --no-translations dist\eegoSports.exe
+
+          Compress-Archive -Path dist\* -DestinationPath eegoSports-windows-x64.zip -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eegoSports-windows
+          path: eegoSports-windows-x64.zip
+
+  build-linux:
+    name: Linux (AppImage)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libboost-dev \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            libxcb-cursor0 \
+            libfuse2 \
+            openssl \
+            qt6-base-dev \
+            qt6-tools-dev-tools \
+            qmake6 \
+            patchelf \
+            wget
+
+      - name: Build and install liblsl
+        run: |
+          git clone --depth 1 --branch "${LSL_VERSION}" https://github.com/sccn/liblsl.git liblsl
+          cmake -S liblsl -B liblsl/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build liblsl/build -j"$(nproc)"
+          sudo cmake --install liblsl/build
+          sudo ldconfig
+
+      - name: Decrypt Linux SDK
+        env:
+          SDK_DECRYPT_PASSPHRASE: ${{ secrets.SDK_DECRYPT_PASSPHRASE }}
+        run: |
+          if [ -z "${SDK_DECRYPT_PASSPHRASE}" ]; then
+            echo "Missing GitHub secret SDK_DECRYPT_PASSPHRASE."
+            exit 1
+          fi
+
+          if [ ! -f ./libeego-SDK.so.enc ]; then
+            echo "Missing encrypted file libeego-SDK.so.enc"
+            exit 1
+          fi
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in ./libeego-SDK.so.enc \
+            -out ./libeego-SDK.so \
+            -pass pass:"${SDK_DECRYPT_PASSPHRASE}"
+
+      - name: Register eego SDK for linker
+        run: |
+          sudo cp "$GITHUB_WORKSPACE/libeego-SDK.so" /usr/local/lib/libeego-SDK.so
+          sudo ldconfig
+
+      - name: Configure and build (qmake + make)
+        run: |
+          rm -rf build-linux
+          mkdir -p build-linux
+          cd build-linux
+          qmake6 ../eegoSports.pro CONFIG+=release
+          make -j"$(nproc)"
+
+      - name: Create desktop file and icon
+        run: |
+          cat > eegoSports.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=eegoSports
+          Comment=LSL streaming for ANT Neuro eego amplifiers
+          Exec=eegoSports
+          Icon=eegoSports
+          Categories=Science;
+          EOF
+          cp ./resources/favicon_neuro.png ./eegoSports.png
+
+      - name: Build AppImage
+        run: |
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE=qmake6
+          export OUTPUT=eegoSports-linux-x86_64.AppImage
+          wget -q -O linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q -O linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy.AppImage linuxdeploy-plugin-qt.AppImage
+
+          ./linuxdeploy.AppImage \
+            --appdir AppDir \
+            -e build-linux/eegoSports \
+            -d eegoSports.desktop \
+            -i eegoSports.png \
+            --library /usr/local/lib/libeego-SDK.so \
+            --library /usr/local/lib/liblsl.so \
+            --plugin qt \
+            --output appimage
+
+          test -f "$OUTPUT"
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eegoSports-linux
+          path: |
+            eegoSports-linux-x86_64.AppImage
+            eegoSports_config.cfg
+
+  release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/eegoSports-windows/eegoSports-windows-x64.zip
+            artifacts/eegoSports-linux/eegoSports-linux-x86_64.AppImage

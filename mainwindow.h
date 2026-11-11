@@ -37,7 +37,7 @@ public slots:
     void setStop(bool stop) {
         this->stop = stop;
     }
-    void setParams(int capId, int samplingRate, double BipRange, double EegRange, unsigned long long hexEegMask, unsigned long long hexBipMask);
+    void setParams(const std::vector<std::string> &capLayout, int samplingRate, double BipRange, double EegRange, const std::vector<bool> &eegMask, const std::vector<bool> &bipMask);
 
 private:
     void OpenEegStream();
@@ -48,6 +48,7 @@ signals:
     void ampNotFound();
     void connectionLost();
     void unknownError();
+    void errorMessage(const QString &message);
 
 private:
     // SDK classes
@@ -60,11 +61,18 @@ private:
     int samplingRate;
     double EegRange;
     double BipRange;
-    unsigned long long hexEegMask;
-    unsigned long long hexBipMask;
+    // Channel selection masks, one entry per channel (index 0 = first channel).
+    // Stored as bit vectors so that cascaded amplifiers (128 EEG + 48 BIP channels)
+    // are not limited by the 64-bit masks of the SDK convenience API.
+    std::vector<bool> eegMask;
+    std::vector<bool> bipMask;
 
-    // Cap layout
+    // Cap layout (labels of the EEG/reference channels, in amplifier order)
     std::vector<std::string> capLayout;
+
+    // Labels of the selected channels, in the order they were requested from the SDK
+    std::vector<std::string> eegLabels;
+    std::vector<std::string> bipLabels;
 
     // Stop acquisition if set to false.
     bool stop;
@@ -87,6 +95,7 @@ private slots:
     void connectionLost();
     void ampNotFound();
     void unknownError();
+    void errorMessage(const QString &message);
     void load_config_dialog();
     void save_config_dialog();
 

@@ -46,6 +46,22 @@ static const std::vector<std::string> layout_CA208 = {
     "OZ"
 };
 
+// NA-265 (64 ch, 10-10 layout, REF at Cz/CPz, GND at AFz/Fpz)
+// Channel order from the datasheet pinning table (DRN-15891 rev. 5):
+// channels 1-32 on connector 1, 33-64 on connector 2.
+static const std::vector<std::string> layout_NA265 = {
+    "Fp1",     "Fp2",     "F9",       "F7",       "F3",       "Fz",       "F4",
+    "F8",      "F10",     "FC5",      "FC1",      "FC2",      "FC6",      "T9",
+    "T7",      "C3",      "C4",       "T8",       "T10",      "CP5",      "CP1",
+    "CP2",     "CP6",     "P9",       "P7",       "P3",       "Pz",       "P4",
+    "P8",      "P10",     "O1",       "O2",
+    "AF7",     "AF3",     "AF4",      "AF8",      "F5",       "F1",       "F2",
+    "F6",      "FC3",     "FCz",      "FC4",      "C5",       "C1",       "C2",
+    "C6",      "CP3",     "CP4",      "P5",       "P1",       "P2",       "P6",
+    "PO5",     "PO3",     "PO4",      "PO6",      "FT7",      "FT8",      "TP7",
+    "TP8",     "PO7",     "PO8",      "POz"
+};
+
 // CA-209 (128 ch, two cascaded amplifiers)
 static const std::vector<std::string> layout_CA209 = {
     "Fp1",     "Fpz",     "Fp2",      "F7",       "F3",       "Fz",       "F4",
@@ -82,6 +98,7 @@ static CapInfo capInfo(int capId) {
     switch (capId) {
     case 0:  return {&layout_CA203, 32, 24};
     case 2:  return {&layout_CA209, 128, 48};
+    case 3:  return {&layout_NA265, 64, 24};
     case 1:
     default: return {&layout_CA208, 64, 24};
     }
@@ -203,7 +220,7 @@ void MainWindow::load_config(const std::string &filename) {
 
     // get config values
     try {
-        // Configs saved with the former "No Labels" entries (capId 3/4) fall back to the default cap
+        // Out-of-range ids (e.g. the former "128 - No Labels" entry, capId 4) fall back to the default cap
         int capId = pt.get<int>("settings.capId", DEFAULT_CAP_ID);
         if (capId < 0 || capId >= ui.Cap_ID->count())
             capId = DEFAULT_CAP_ID;

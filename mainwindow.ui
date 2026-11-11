@@ -50,6 +50,11 @@
              <string>CA-209  (128 ch)</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>NA-265  (64 ch)</string>
+            </property>
+           </item>
           </widget>
          </item>
          <item row="1" column="0">

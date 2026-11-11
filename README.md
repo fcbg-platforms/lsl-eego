@@ -46,6 +46,7 @@ The workflow file is the reference for the exact build steps.
    | CA-203 | 32 | 24 | 1 |
    | CA-208 | 64 | 24 | 1 |
    | CA-209 | 128 | 48 | 2 cascaded (ordered by serial number) |
+   | NA-265 | 64 | 24 | 1 |
 
    Selecting a cap sets the EEG mask to all of its channels and truncates the BIP mask to its maximum. Selecting CA-209 with a single amplifier gives an error when linking.
 2. Select the desired ```sampling rate```

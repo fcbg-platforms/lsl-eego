@@ -395,7 +395,9 @@ void Reader::OpenEegStream() {
     for (const channel &ch : amp->getChannelList()) {
         switch (ch.getType()) {
         case channel::reference:
-            if (maskBit(eegMask, refCounter)) {
+            // Only the electrodes of the selected cap are streamed (e.g. 32 for a
+            // CA-203 on a 64 ch amplifier); the mask selects within them.
+            if ((capLayout.empty() || refCounter < capLayout.size()) && maskBit(eegMask, refCounter)) {
                 selected.push_back(ch);
                 eegLabels.push_back(labelAt(capLayout, refCounter, "Ch"));
             }

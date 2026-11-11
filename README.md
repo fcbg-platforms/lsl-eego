@@ -46,6 +46,7 @@ The workflow file is the reference for the exact build steps.
    - All 64 EEG channels: `0xFFFFFFFFFFFFFFFF` (16 digits). All 128 EEG channels: `0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF` (32 digits, the default).
    - All 24 BIP channels: `0xFFFFFF`. All 48 BIP channels (cascaded): `0xFFFFFFFFFFFF`.
    - Bits beyond the channels available on the connected amplifier(s) are ignored.
+   - Only the electrodes of the selected cap are streamed: a CA-203 (32 ch) on a 64 channel amplifier streams 32 EEG channels, whatever the mask.
 5. Press ```Link``` button to start the data streaming to the LSL local server.
 
 The settings can be saved/loaded as a `.cfg` file, and the application can be started from the command line with `-c <config file>` and `-l 1` to link automatically.

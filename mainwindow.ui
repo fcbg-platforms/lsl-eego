@@ -199,7 +199,7 @@
             <string>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</string>
            </property>
            <property name="toolTip">
-            <string>Hexadecimal mask of the EEG channels to stream (bit 0 = first channel). Any length is accepted: 16 hex digits address 64 channels, 32 hex digits address 128 channels (cascaded amplifiers). Bits beyond the available channels are ignored.</string>
+            <string>Hexadecimal mask of the EEG channels to stream (bit 0 = first channel). Only the channels of the selected cap are streamed; the mask selects among them. Any length is accepted: 16 hex digits address 64 channels, 32 hex digits address 128 channels (cascaded amplifiers). Bits beyond the available channels are ignored.</string>
            </property>
           </widget>
          </item>

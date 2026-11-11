@@ -96,6 +96,7 @@ private slots:
     void ampNotFound();
     void unknownError();
     void errorMessage(const QString &message);
+    void capChanged(int index);
     void load_config_dialog();
     void save_config_dialog();
 
@@ -112,6 +113,9 @@ private:
     // raw config file IO
     void load_config(const std::string &filename);
     void save_config(const std::string &filename);
+
+    // make the EEG/BIP masks match the selected cap (32/64/128 EEG, 24/24/48 BIP)
+    void applyCapToMasks(bool resetEegMask);
 
     Reader *reader;
     QThread *thread;

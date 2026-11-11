@@ -199,7 +199,7 @@
             <string>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</string>
            </property>
            <property name="toolTip">
-            <string>Hexadecimal mask of the EEG channels to stream (bit 0 = first channel). Only the channels of the selected cap are streamed; the mask selects among them. Any length is accepted: 16 hex digits address 64 channels, 32 hex digits address 128 channels (cascaded amplifiers). Bits beyond the available channels are ignored.</string>
+            <string>Hexadecimal mask of the EEG channels to stream (bit 0 = first channel). Set to all channels when a cap is selected and truncated to the cap size: 8 hex digits for 32 ch, 16 for 64 ch, 32 for 128 ch.</string>
            </property>
           </widget>
          </item>
@@ -216,7 +216,7 @@
             <string>0x000000</string>
            </property>
            <property name="toolTip">
-            <string>Hexadecimal mask of the bipolar (AUX) channels to stream (bit 0 = AUX1). 6 hex digits address 24 channels, 12 hex digits address 48 channels (cascaded amplifiers).</string>
+            <string>Hexadecimal mask of the bipolar (AUX) channels to stream (bit 0 = AUX1). Truncated to the cap maximum: 6 hex digits (24 channels) for the 32 and 64 ch caps, 12 hex digits (48 channels) for the 128 ch cap.</string>
            </property>
           </widget>
          </item>

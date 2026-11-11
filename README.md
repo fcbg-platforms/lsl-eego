@@ -39,14 +39,20 @@ The project uses qmake ([eegoSports.pro](eegoSports.pro)) with Qt 6, the Boost h
 The workflow file is the reference for the exact build steps.
 
 ## Usage
-1. Select the ```CAP ID``` by looking directly on the cap you have. For 128 channels, connect both amplifiers: they are cascaded automatically (ordered by serial number).
+1. Select the ```CAP ID``` by looking directly on the cap you have. The cap defines the channels that can be streamed:
+
+   | Cap | EEG channels | BIP channels (max) | Amplifiers |
+   |---|---|---|---|
+   | CA-203 | 32 | 24 | 1 |
+   | CA-208 | 64 | 24 | 1 |
+   | CA-209 | 128 | 48 | 2 cascaded (ordered by serial number) |
+
+   Selecting a cap sets the EEG mask to all of its channels and truncates the BIP mask to its maximum. Selecting CA-209 with a single amplifier gives an error when linking.
 2. Select the desired ```sampling rate```
 3. Pre-Selected ```EEG/BIP ranges``` are ok for most of the application.
-4. ```EEG/BIP masks``` allow to restrict the acquisition to a channels subpart. The mask is in hexadecimal and can have any length: bit 0 (rightmost) is channel 1. Write from right to left a binary vector (e.g. 00101 to keep only Ch1 and Ch3) and then convert it to an hexadecimal (<https://www.rapidtables.com/convert/number/binary-to-hex.html>).
-   - All 64 EEG channels: `0xFFFFFFFFFFFFFFFF` (16 digits). All 128 EEG channels: `0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF` (32 digits, the default).
-   - All 24 BIP channels: `0xFFFFFF`. All 48 BIP channels (cascaded): `0xFFFFFFFFFFFF`.
-   - Bits beyond the channels available on the connected amplifier(s) are ignored.
-   - Only the electrodes of the selected cap are streamed: a CA-203 (32 ch) on a 64 channel amplifier streams 32 EEG channels, whatever the mask.
+4. ```EEG/BIP masks``` allow to restrict the acquisition to a channels subpart. The mask is in hexadecimal: bit 0 (rightmost) is channel 1. Write from right to left a binary vector (e.g. 00101 to keep only Ch1 and Ch3) and then convert it to an hexadecimal (<https://www.rapidtables.com/convert/number/binary-to-hex.html>). The masks are truncated to the channels of the selected cap.
+   - All EEG channels: `0xFFFFFFFF` (32 ch), `0xFFFFFFFFFFFFFFFF` (64 ch), `0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF` (128 ch).
+   - All BIP channels: `0xFFFFFF` (24 ch), `0xFFFFFFFFFFFF` (48 ch, cascaded). No BIP channel: `0x000000`.
 5. Press ```Link``` button to start the data streaming to the LSL local server.
 
 The settings can be saved/loaded as a `.cfg` file, and the application can be started from the command line with `-c <config file>` and `-l 1` to link automatically.

@@ -69,14 +69,21 @@ static const std::vector<std::string> layout_CA209 = {
     "OI1h",    "OI2h"
 };
 
-// Index in the "CAP ID" combo box -> EEG channel labels
+// Index in the "CAP ID" combo box -> cap description.
+// One eego amplifier has 64 EEG + 24 BIP inputs; the 128 ch cap uses two cascaded amplifiers.
+struct CapInfo {
+    const std::vector<std::string> *labels; // EEG channel labels
+    unsigned int eegCount;                  // number of EEG channels of the cap
+    unsigned int bipCount;                  // maximum number of BIP/AUX channels
+};
+
 static const int DEFAULT_CAP_ID = 1; // CA-208 (64 ch)
-static std::vector<std::string> layoutForCap(int capId) {
+static CapInfo capInfo(int capId) {
     switch (capId) {
-    case 0:  return layout_CA203;
-    case 1:  return layout_CA208;
-    case 2:  return layout_CA209;
-    default: return {}; // unknown cap: channels are labelled Ch1..ChN
+    case 0:  return {&layout_CA203, 32, 24};
+    case 2:  return {&layout_CA209, 128, 48};
+    case 1:
+    default: return {&layout_CA208, 64, 24};
     }
 }
 
@@ -116,6 +123,23 @@ static bool maskBit(const std::vector<bool> &mask, size_t k) {
     return k < mask.size() && mask[k];
 }
 
+// Format the first nbits of a mask as a hexadecimal string with exactly ceil(nbits / 4) digits.
+static std::string formatHexMask(const std::vector<bool> &bits, unsigned int nbits) {
+    static const char hexDigits[] = "0123456789ABCDEF";
+    std::string text = "0x";
+    const int digits = static_cast<int>((nbits + 3) / 4);
+    for (int d = digits - 1; d >= 0; d--) {
+        int value = 0;
+        for (int b = 0; b < 4; b++) {
+            const unsigned int k = static_cast<unsigned int>(d * 4 + b);
+            if (k < nbits && maskBit(bits, k))
+                value |= 1 << b;
+        }
+        text += hexDigits[value];
+    }
+    return text;
+}
+
 
 MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bool linkOnStart) : QMainWindow(parent)
 {
@@ -131,10 +155,12 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
         ui.samplingRate->setCurrentIndex(1);
         ui.EEG_Range->setCurrentIndex(0);
         ui.BIP_Range->setCurrentIndex(2);
+        applyCapToMasks(true);
     }
 
 
     // make GUI connections
+    QObject::connect(ui.Cap_ID, SIGNAL(currentIndexChanged(int)), this, SLOT(capChanged(int)));
     QObject::connect(ui.actionLoad_Configuration, SIGNAL(triggered()), this, SLOT(load_config_dialog()));
     QObject::connect(ui.actionSave_Configuration, SIGNAL(triggered()), this, SLOT(save_config_dialog()));
     QObject::connect(ui.actionQuit, SIGNAL(triggered()), this, SLOT(close()));
@@ -181,7 +207,9 @@ void MainWindow::load_config(const std::string &filename) {
         int capId = pt.get<int>("settings.capId", DEFAULT_CAP_ID);
         if (capId < 0 || capId >= ui.Cap_ID->count())
             capId = DEFAULT_CAP_ID;
+        ui.Cap_ID->blockSignals(true); // keep the masks of the config file
         ui.Cap_ID->setCurrentIndex(capId);
+        ui.Cap_ID->blockSignals(false);
         ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
         ui.EEG_Range->setCurrentIndex(pt.get<int>("settings.EegRange", 0));
         ui.BIP_Range->setCurrentIndex(pt.get<int>("settings.BipRange", 2));
@@ -190,11 +218,32 @@ void MainWindow::load_config(const std::string &filename) {
         ui.EEG_LineEdit->setText(QString::fromStdString(tmp));
         tmp = pt.get<std::string>("settings.hexBipMask", DEFAULT_BIP_MASK);
         ui.BIP_LineEdit->setText(QString::fromStdString(tmp));
+
+        // truncate the masks to the channels of the selected cap
+        applyCapToMasks(false);
     }
     catch (std::exception &) {
         QMessageBox::information(this, "Error in Config File", "Could not read out config parameters.", QMessageBox::Ok);
         return;
     }
+}
+
+void MainWindow::capChanged(int) {
+    // a new cap selects all of its EEG channels; the BIP selection is kept within the cap's limit
+    applyCapToMasks(true);
+}
+
+void MainWindow::applyCapToMasks(bool resetEegMask) {
+    const CapInfo cap = capInfo(ui.Cap_ID->currentIndex());
+
+    std::vector<bool> eegMask, bipMask;
+    if (resetEegMask || !parseHexMask(ui.EEG_LineEdit->text().toStdString(), eegMask))
+        eegMask.assign(cap.eegCount, true);
+    if (!parseHexMask(ui.BIP_LineEdit->text().toStdString(), bipMask))
+        bipMask.clear();
+
+    ui.EEG_LineEdit->setText(QString::fromStdString(formatHexMask(eegMask, cap.eegCount)));
+    ui.BIP_LineEdit->setText(QString::fromStdString(formatHexMask(bipMask, cap.bipCount)));
 }
 
 void MainWindow::save_config(const std::string &filename) {
@@ -253,7 +302,9 @@ void MainWindow::link() {
             tmpParam = ui.BIP_Range->currentText();
             double BipRange = tmpParam.toDouble() / 1000;
 
-            // EEG / BIP channel masks (arbitrary length, so >64 channels are supported)
+            // EEG / BIP channel masks (arbitrary length, so >64 channels are supported),
+            // truncated to the channels of the selected cap
+            applyCapToMasks(false);
             std::vector<bool> eegMask, bipMask;
             if (!parseHexMask(ui.EEG_LineEdit->text().toStdString(), eegMask)) {
                 QMessageBox::critical(this, "Error", "Invalid EEG channel mask: it must be a hexadecimal number (e.g. 0xFFFFFFFF).", QMessageBox::Ok);
@@ -267,7 +318,7 @@ void MainWindow::link() {
             thread = new QThread();
             reader = new Reader();
 
-            reader->setParams(layoutForCap(capId), samplingRate, BipRange, EegRange, eegMask, bipMask);
+            reader->setParams(*capInfo(capId).labels, samplingRate, BipRange, EegRange, eegMask, bipMask);
 
             reader->moveToThread(thread);
             connect(thread, SIGNAL(started()), reader, SLOT(read()));
@@ -397,7 +448,7 @@ void Reader::OpenEegStream() {
         case channel::reference:
             // Only the electrodes of the selected cap are streamed (e.g. 32 for a
             // CA-203 on a 64 ch amplifier); the mask selects within them.
-            if ((capLayout.empty() || refCounter < capLayout.size()) && maskBit(eegMask, refCounter)) {
+            if (refCounter < capLayout.size() && maskBit(eegMask, refCounter)) {
                 selected.push_back(ch);
                 eegLabels.push_back(labelAt(capLayout, refCounter, "Ch"));
             }
@@ -417,6 +468,10 @@ void Reader::OpenEegStream() {
     std::cout << "eegoSports: amplifier exposes " << refCounter << " EEG and " << bipCounter
               << " BIP channels; streaming " << eegLabels.size() << " EEG and " << bipLabels.size()
               << " BIP channels." << std::endl;
+    if (refCounter < capLayout.size())
+        throw std::runtime_error("The selected cap has " + std::to_string(capLayout.size())
+                                 + " EEG channels but the connected amplifier(s) only provide "
+                                 + std::to_string(refCounter) + ". A 128 channel cap needs two cascaded amplifiers.");
     if (selected.empty())
         throw std::runtime_error("The EEG/BIP masks do not select any channel.");
 
@@ -472,6 +527,9 @@ void Reader::read() {
                 break;
             }
         }
+
+        std::cout << "eegoSports: LSL stream has " << eegIdx << " EEG, " << bipIdx << " BIP and "
+                  << trgIdx << " trigger channel(s)." << std::endl;
 
         // create data streaminfo and append some meta-data
         lsl::stream_info data_info("eegoSports " + amp->getSerialNumber(), "EEG", static_cast<int32_t>(outputs.size()), samplingRate, lsl::cf_double64, "eegoSports_" + amp->getSerialNumber());

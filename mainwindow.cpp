@@ -69,23 +69,14 @@ static const std::vector<std::string> layout_CA209 = {
     "OI1h",    "OI2h"
 };
 
-static std::vector<std::string> numberedLabels(const std::string &prefix, unsigned int count) {
-    std::vector<std::string> labels;
-    labels.reserve(count);
-    for (unsigned int k = 1; k <= count; k++)
-        labels.push_back(prefix + std::to_string(k));
-    return labels;
-}
-
 // Index in the "CAP ID" combo box -> EEG channel labels
+static const int DEFAULT_CAP_ID = 1; // CA-208 (64 ch)
 static std::vector<std::string> layoutForCap(int capId) {
     switch (capId) {
     case 0:  return layout_CA203;
     case 1:  return layout_CA208;
     case 2:  return layout_CA209;
-    case 3:  return numberedLabels("Ch", 64);
-    case 4:
-    default: return numberedLabels("Ch", 128);
+    default: return {}; // unknown cap: channels are labelled Ch1..ChN
     }
 }
 
@@ -136,7 +127,7 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
     if(!config_file.empty()) {
         load_config(config_file);
     } else {
-        ui.Cap_ID->setCurrentIndex(1);
+        ui.Cap_ID->setCurrentIndex(DEFAULT_CAP_ID);
         ui.samplingRate->setCurrentIndex(1);
         ui.EEG_Range->setCurrentIndex(0);
         ui.BIP_Range->setCurrentIndex(2);
@@ -186,7 +177,11 @@ void MainWindow::load_config(const std::string &filename) {
 
     // get config values
     try {
-        ui.Cap_ID->setCurrentIndex(pt.get<int>("settings.capId", 1));
+        // Configs saved with the former "No Labels" entries (capId 3/4) fall back to the default cap
+        int capId = pt.get<int>("settings.capId", DEFAULT_CAP_ID);
+        if (capId < 0 || capId >= ui.Cap_ID->count())
+            capId = DEFAULT_CAP_ID;
+        ui.Cap_ID->setCurrentIndex(capId);
         ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
         ui.EEG_Range->setCurrentIndex(pt.get<int>("settings.EegRange", 0));
         ui.BIP_Range->setCurrentIndex(pt.get<int>("settings.BipRange", 2));

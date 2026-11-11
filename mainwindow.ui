@@ -50,16 +50,6 @@
              <string>CA-209  (128 ch)</string>
             </property>
            </item>
-           <item>
-            <property name="text">
-             <string> 64   - No Labels</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>128 - No Labels</string>
-            </property>
-           </item>
           </widget>
          </item>
          <item row="1" column="0">

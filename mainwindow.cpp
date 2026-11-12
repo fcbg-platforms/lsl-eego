@@ -19,15 +19,6 @@ using namespace eemagine::sdk;
 // Default BIP selection (saved as a hexadecimal mask in configuration files): none.
 static const char *DEFAULT_BIP_MASK = "0x000000";
 
-// CA-203 (32 ch)
-static const std::vector<std::string> layout_CA203 = {
-    "Fp1",       "Fpz",       "Fp2",      "F7",      "F3",       "Fz",       "F4",
-    "F8",        "FC5",       "FC1",      "FC2",     "FC6",      "M1",       "T7",
-    "C3",        "Cz",        "C4",       "T8",      "M2",       "CP5",      "CP1",
-    "CP2",       "CP6",       "P7",       "P3",      "Pz",       "P4",       "P8",
-    "POz",       "O1",        "Oz",       "O2"
-};
-
 // CA-208 (64 ch)
 static const std::vector<std::string> layout_CA208 = {
     "Fp1",       "Fpz",       "Fp2",       "F7",        "F3",        "Fz",        "F4",
@@ -65,11 +56,10 @@ struct CapInfo {
     const std::vector<std::string> *labels; // EEG channel labels, in amplifier order
 };
 static const std::vector<CapInfo> caps = {
-    {"CA-203", &layout_CA203},
     {"CA-208", &layout_CA208},
     {"NA-265", &layout_NA265},
 };
-static const int DEFAULT_CAP_ID = 1; // CA-208 (64 ch)
+static const int DEFAULT_CAP_ID = 0; // CA-208 (64 ch)
 
 static const CapInfo &capInfo(int capId) {
     if (capId < 0 || capId >= static_cast<int>(caps.size()))
@@ -209,19 +199,14 @@ void MainWindow::load_config(const std::string &filename) {
 
     // get config values
     try {
-        // The cap is saved by name. Older files only have the combo box index: of
-        // those, only CA-203 (0) and CA-208 (1) still exist, others use the default cap.
+        // The cap is saved by name; unknown names (e.g. the removed CA-203) use the
+        // default cap. Older files only have the combo box index, which was CA-208
+        // at index 1: any legacy index maps to the default cap (CA-208).
         int capId = DEFAULT_CAP_ID;
         const std::string capName = pt.get<std::string>("settings.cap", "");
-        if (!capName.empty()) {
-            for (size_t k = 0; k < caps.size(); k++) {
-                if (capName == caps[k].name)
-                    capId = static_cast<int>(k);
-            }
-        } else {
-            const int legacyId = pt.get<int>("settings.capId", DEFAULT_CAP_ID);
-            if (legacyId == 0 || legacyId == 1)
-                capId = legacyId;
+        for (size_t k = 0; k < caps.size(); k++) {
+            if (capName == caps[k].name)
+                capId = static_cast<int>(k);
         }
         ui.Cap_ID->setCurrentIndex(capId);
         ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
@@ -431,8 +416,8 @@ void Reader::OpenEegStream() {
         switch (ch.getType()) {
         case channel::reference: {
             const size_t k = eegLabels.size();
-            // All the electrodes of the selected cap are streamed (e.g. 32 for a
-            // CA-203 on a 64 ch amplifier), the other inputs are dropped.
+            // All the electrodes of the selected cap are streamed; amplifier
+            // inputs beyond the cap layout (if any) are dropped.
             const bool streamed = k < capLayout.size();
             eegLabels.push_back(streamed ? labelAt(capLayout, k, "Ch") : std::string());
             eegStreamed += streamed ? 1 : 0;

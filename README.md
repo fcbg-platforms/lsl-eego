@@ -1,6 +1,6 @@
 # LSL plugin for the EEG acquisition with ANTneuro device.
 
-A single code base builds for Windows and Linux. It streams one eego amplifier with a 32 or 64 channel cap,
+A single code base builds for Windows and Linux. It streams one eego amplifier with a 64 channel cap (CA-208 or NA-265),
 plus up to 24 bipolar/AUX channels.
 
 ## Download
@@ -43,7 +43,6 @@ The workflow file is the reference for the exact build steps.
 
    | Cap | EEG channels |
    |---|---|
-   | CA-203 | 32 |
    | CA-208 | 64 |
    | NA-265 | 64 |
 

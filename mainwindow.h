@@ -70,7 +70,7 @@ private:
     // Cap layout (labels of the EEG/reference channels, in amplifier order)
     std::vector<std::string> capLayout;
 
-    // Labels of the selected channels, in the order they were requested from the SDK
+    // One label per amplifier EEG/BIP channel; empty = channel not selected by the masks
     std::vector<std::string> eegLabels;
     std::vector<std::string> bipLabels;
 

@@ -452,48 +452,54 @@ void Reader::OpenEegStream() {
     if (!amp)
         throw(exceptions::notFound("No amp found"));
 
-    // Build the channel list from the masks ourselves: the SDK convenience
-    // overload only takes 64-bit masks, which cannot address the 128 EEG /
-    // 48 BIP channels of cascaded amplifiers.
+    // The amplifier is always opened with ALL its EEG and BIP channels; the masks
+    // are applied in software when building the LSL stream (see read()).
+    // Reason: with cascaded amplifiers the SDK ignores a channel subset and still
+    // delivers the data of every channel, while sizing its buffers for the subset,
+    // which corrupts the heap and crashes the application.
+    // eegLabels / bipLabels hold one entry per amplifier channel; an empty label
+    // means that the channel is not streamed.
     eegLabels.clear();
     bipLabels.clear();
-    std::vector<channel> selected;
-    size_t refCounter = 0;
-    size_t bipCounter = 0;
+    std::vector<channel> allChannels;
+    size_t eegStreamed = 0;
+    size_t bipStreamed = 0;
     for (const channel &ch : amp->getChannelList()) {
         switch (ch.getType()) {
-        case channel::reference:
+        case channel::reference: {
+            const size_t k = eegLabels.size();
             // Only the electrodes of the selected cap are streamed (e.g. 32 for a
             // CA-203 on a 64 ch amplifier); the mask selects within them.
-            if (refCounter < capLayout.size() && maskBit(eegMask, refCounter)) {
-                selected.push_back(ch);
-                eegLabels.push_back(labelAt(capLayout, refCounter, "Ch"));
-            }
-            ++refCounter;
+            const bool streamed = k < capLayout.size() && maskBit(eegMask, k);
+            eegLabels.push_back(streamed ? labelAt(capLayout, k, "Ch") : std::string());
+            eegStreamed += streamed ? 1 : 0;
+            allChannels.push_back(ch);
             break;
-        case channel::bipolar:
-            if (maskBit(bipMask, bipCounter)) {
-                selected.push_back(ch);
-                bipLabels.push_back("AUX" + std::to_string(bipCounter + 1));
-            }
-            ++bipCounter;
+        }
+        case channel::bipolar: {
+            const size_t k = bipLabels.size();
+            const bool streamed = maskBit(bipMask, k);
+            bipLabels.push_back(streamed ? "AUX" + std::to_string(k + 1) : std::string());
+            bipStreamed += streamed ? 1 : 0;
+            allChannels.push_back(ch);
             break;
+        }
         default:
             break;
         }
     }
-    std::cout << "eegoSports: amplifier exposes " << refCounter << " EEG and " << bipCounter
-              << " BIP channels; streaming " << eegLabels.size() << " EEG and " << bipLabels.size()
+    std::cout << "eegoSports: amplifier exposes " << eegLabels.size() << " EEG and " << bipLabels.size()
+              << " BIP channels; streaming " << eegStreamed << " EEG and " << bipStreamed
               << " BIP channels." << std::endl;
-    if (refCounter < capLayout.size())
+    if (eegLabels.size() < capLayout.size())
         throw std::runtime_error("The selected cap has " + std::to_string(capLayout.size())
                                  + " EEG channels but the connected amplifier(s) only provide "
-                                 + std::to_string(refCounter) + ". A 128 channel cap needs two cascaded amplifiers.");
-    if (selected.empty())
+                                 + std::to_string(eegLabels.size()) + ". A 128 channel cap needs two cascaded amplifiers.");
+    if (eegStreamed + bipStreamed == 0)
         throw std::runtime_error("The EEG/BIP masks do not select any channel.");
 
     // EEG stream's instanciation
-    eegStream = amp->OpenEegStream(samplingRate, EegRange, BipRange, selected);
+    eegStream = amp->OpenEegStream(samplingRate, EegRange, BipRange, allChannels);
 }
 
 // One column of the LSL data stream
@@ -512,23 +518,34 @@ void Reader::read() {
 
         std::vector<OutputChannel> outputs;
 
-        // Map every SDK channel to an LSL channel, based on its type rather than
-        // its position (cascaded amplifiers may expose several trigger / sample
-        // counter channels). Sample counters are not streamed.
+        // Map SDK channels to LSL channels, based on their type rather than their
+        // position. EEG/BIP channels not selected by the masks (empty label) and
+        // sample counters are not streamed.
         size_t eegIdx = 0, bipIdx = 0, trgIdx = 0;
+        size_t eegOut = 0, bipOut = 0;
         int triggerColumn = -1;
         struct Desc { std::string label, type, unit; };
         std::vector<Desc> descs;
         for (unsigned int i = 0; i < channelList.size(); i++) {
             switch (channelList[i].getType()) {
-            case channel::reference:
-                descs.push_back({labelAt(eegLabels, eegIdx++, "Ch"), "EEG", "uV"});
-                outputs.push_back({i, 1e6});
+            case channel::reference: {
+                const size_t k = eegIdx++;
+                if (k < eegLabels.size() && !eegLabels[k].empty()) {
+                    descs.push_back({eegLabels[k], "EEG", "uV"});
+                    outputs.push_back({i, 1e6});
+                    ++eegOut;
+                }
                 break;
-            case channel::bipolar:
-                descs.push_back({labelAt(bipLabels, bipIdx++, "AUX"), "AUX", "uV"});
-                outputs.push_back({i, 1e6});
+            }
+            case channel::bipolar: {
+                const size_t k = bipIdx++;
+                if (k < bipLabels.size() && !bipLabels[k].empty()) {
+                    descs.push_back({bipLabels[k], "AUX", "uV"});
+                    outputs.push_back({i, 1e6});
+                    ++bipOut;
+                }
                 break;
+            }
             case channel::trigger:
                 descs.push_back({trgIdx == 0 ? std::string("TRIGGER") : "TRIGGER" + std::to_string(trgIdx + 1), "Markers", "[]"});
                 outputs.push_back({i, 1.0});
@@ -545,7 +562,7 @@ void Reader::read() {
             }
         }
 
-        std::cout << "eegoSports: LSL stream has " << eegIdx << " EEG, " << bipIdx << " BIP and "
+        std::cout << "eegoSports: LSL stream has " << eegOut << " EEG, " << bipOut << " BIP and "
                   << trgIdx << " trigger channel(s)." << std::endl;
 
         // create data streaminfo and append some meta-data

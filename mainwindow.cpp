@@ -339,7 +339,8 @@ void MainWindow::link() {
             return;
         }
 
-        // done, all successful
+        // done, all successful: freeze the parameters while linked
+        setSettingsEnabled(false);
         ui.linkButton->setText("Unlink");
     }
 }
@@ -348,6 +349,12 @@ void MainWindow::threadFinished() {
     reader = nullptr;
     thread = nullptr; // deleted through deleteLater()
     ui.linkButton->setText("Link");
+    setSettingsEnabled(true);
+}
+
+void MainWindow::setSettingsEnabled(bool enabled) {
+    ui.groupBox->setEnabled(enabled);
+    ui.actionLoad_Configuration->setEnabled(enabled);
 }
 
 void MainWindow::threadTimeout() {

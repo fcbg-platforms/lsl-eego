@@ -117,6 +117,9 @@ private:
     std::vector<bool> bipSelection() const;
     void setBipSelection(const std::vector<bool> &mask);
 
+    // enable/disable the device settings (frozen while linked)
+    void setSettingsEnabled(bool enabled);
+
     Reader *reader;
     QThread *thread;
 

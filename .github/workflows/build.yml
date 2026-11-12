@@ -125,13 +125,13 @@ jobs:
 
           & "$env:QT_WINDEPLOYQT" --release --no-translations dist\eegoSports.exe
 
-          Compress-Archive -Path dist\* -DestinationPath eegoSports-windows-x64.zip -Force
-
+      # upload-artifact zips the folder itself: the download is a single zip
+      # with eegoSports.exe and its DLLs at the root (no zip inside a zip)
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: eegoSports-windows
-          path: eegoSports-windows-x64.zip
+          name: eegoSports-windows-x64
+          path: dist/
 
   build-linux:
     name: Linux (AppImage)
@@ -255,9 +255,15 @@ jobs:
         with:
           path: artifacts
 
+      # Release assets must be files: zip the Windows folder here
+      - name: Package Windows release zip
+        run: |
+          cd artifacts/eegoSports-windows-x64
+          zip -r -q ../../eegoSports-windows-x64.zip .
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/eegoSports-windows/eegoSports-windows-x64.zip
+            eegoSports-windows-x64.zip
             artifacts/eegoSports-linux/eegoSports-linux-x86_64.AppImage

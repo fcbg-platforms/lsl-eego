@@ -61,8 +61,7 @@ private:
     int samplingRate;
     double EegRange;
     double BipRange;
-    // BIP channel selection mask, one entry per channel (index 0 = AUX1).
-    // Stored as a bit vector so that the 48 BIP channels of cascaded amplifiers fit.
+    // BIP channel selection, one entry per channel (index 0 = AUX1)
     std::vector<bool> bipMask;
 
     // Cap layout (labels of the EEG/reference channels, in amplifier order).
@@ -95,7 +94,8 @@ private slots:
     void ampNotFound();
     void unknownError();
     void errorMessage(const QString &message);
-    void capChanged(int index);
+    void selectAllBip();
+    void selectNoBip();
     void load_config_dialog();
     void save_config_dialog();
 
@@ -113,8 +113,9 @@ private:
     void load_config(const std::string &filename);
     void save_config(const std::string &filename);
 
-    // truncate the BIP mask to the selected cap (24 BIP, or 48 for the 128 ch cap)
-    void applyCapToBipMask();
+    // checked BIP channels of the list (index 0 = AUX1)
+    std::vector<bool> bipSelection() const;
+    void setBipSelection(const std::vector<bool> &mask);
 
     Reader *reader;
     QThread *thread;

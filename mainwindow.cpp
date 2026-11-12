@@ -8,7 +8,6 @@
 #include <cctype>
 #include <chrono>
 #include <iostream>
-#include <numeric>
 #include <stdexcept>
 #include <thread>
 
@@ -17,9 +16,7 @@ using namespace eemagine::sdk;
 //---------------------------------------------------------------------------
 // Layouts
 //---------------------------------------------------------------------------
-// Default masks: every EEG channel of two cascaded amplifiers (128 bits) and
-// no bipolar/AUX channel. Bits beyond the channels actually available on the
-// connected amplifier(s) are ignored, so this also works with a single 64 ch amp.
+// Default BIP selection (saved as a hexadecimal mask in configuration files): none.
 static const char *DEFAULT_BIP_MASK = "0x000000";
 
 // CA-203 (32 ch)
@@ -61,47 +58,27 @@ static const std::vector<std::string> layout_NA265 = {
     "TP8",     "PO7",     "PO8",      "POz"
 };
 
-// CA-209 (128 ch, two cascaded amplifiers)
-static const std::vector<std::string> layout_CA209 = {
-    "Fp1",     "Fpz",     "Fp2",      "F7",       "F3",       "Fz",       "F4",
-    "F8",      "FC5",     "FC1",      "FC2",      "FC6",      "M1",       "T7",
-    "C3",      "Cz",      "C4",       "T8",       "M2",       "CP5",      "CP1",
-    "CP2",     "CP6",     "P7",       "P3",       "Pz",       "P4",       "P8",
-    "POz",     "O1",      "O2",       "HEOGR",    "AF7",      "AF3",      "AF4",
-    "AF8",     "F5",      "F1",       "F2",       "F6",       "FC3",      "FCz",
-    "FC4",     "C5",      "C1",       "C2",       "C6",       "CP3",      "CP4",
-    "P5",      "P1",      "P2",       "P6",       "HEOGL",    "PO3",      "PO4",
-    "VEOGU",   "FT7",     "FT8",      "TP7",      "TP8",      "PO7",      "PO8",
-    "VEOGL",   "FT9",     "FT10",     "TPP9h",    "TPP10h",   "PO9",      "PO10",
-    "P9",      "P10",     "AFF1",     "AFz",      "AFF2",     "FFC5h",    "FFC3h",
-    "FFC4h",   "FFC6h",   "FCC5h",    "FCC3h",    "FCC4h",    "FCC6h",    "CCP5h",
-    "CCP3h",   "CCP4h",   "CCP6h",    "CPP5h",    "CPP3h",    "CPP4h",    "CPP6h",
-    "PPO1",    "PPO2",    "I1",       "Iz",       "I2",       "AFP3h",    "AFP4h",
-    "AFF5h",   "AFF6h",   "FFT7h",    "FFC1h",    "FFC2h",    "FFT8h",    "FTT9h",
-    "FTT7h",   "FCC1h",   "FCC2h",    "FTT8h",    "FTT10h",   "TTP7h",    "CCP1h",
-    "CCP2h",   "TTP8h",   "TPP7h",    "CPP1h",    "CPP2h",    "TPP8h",    "PPO9h",
-    "PPO5h",   "PPO6h",   "PPO10h",   "POO9h",    "POO3h",    "POO4h",    "POO10h",
-    "OI1h",    "OI2h"
-};
-
-// Index in the "CAP ID" combo box -> cap description.
-// One eego amplifier has 64 EEG + 24 BIP inputs; the 128 ch cap uses two cascaded amplifiers.
+// Caps, in the order of the "CAP ID" combo box. The name is what is saved in
+// configuration files, so that the combo box can be reordered safely.
 struct CapInfo {
-    const std::vector<std::string> *labels; // EEG channel labels
-    unsigned int eegCount;                  // number of EEG channels of the cap
-    unsigned int bipCount;                  // maximum number of BIP/AUX channels
+    const char *name;
+    const std::vector<std::string> *labels; // EEG channel labels, in amplifier order
 };
-
+static const std::vector<CapInfo> caps = {
+    {"CA-203", &layout_CA203},
+    {"CA-208", &layout_CA208},
+    {"NA-265", &layout_NA265},
+};
 static const int DEFAULT_CAP_ID = 1; // CA-208 (64 ch)
-static CapInfo capInfo(int capId) {
-    switch (capId) {
-    case 0:  return {&layout_CA203, 32, 24};
-    case 2:  return {&layout_CA209, 128, 48};
-    case 3:  return {&layout_NA265, 64, 24};
-    case 1:
-    default: return {&layout_CA208, 64, 24};
-    }
+
+static const CapInfo &capInfo(int capId) {
+    if (capId < 0 || capId >= static_cast<int>(caps.size()))
+        capId = DEFAULT_CAP_ID;
+    return caps[static_cast<size_t>(capId)];
 }
+
+// One eego amplifier has 24 bipolar (AUX) inputs.
+static const int BIP_CHANNEL_COUNT = 24;
 
 // Label of the k-th channel (0-based) in a layout, falling back to a numbered label.
 static std::string labelAt(const std::vector<std::string> &labels, size_t k, const std::string &fallbackPrefix) {
@@ -163,6 +140,19 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
     thread = nullptr;
     ui.setupUi(this);
 
+    // Caps
+    ui.Cap_ID->clear();
+    for (const CapInfo &cap : caps)
+        ui.Cap_ID->addItem(QString::fromLatin1(cap.name) + QString("  (%1 ch)").arg(static_cast<int>(cap.labels->size())));
+
+    // BIP channels: one checkable entry per AUX input
+    ui.BIP_List->clear();
+    for (int k = 1; k <= BIP_CHANNEL_COUNT; k++) {
+        QListWidgetItem *item = new QListWidgetItem(QString("AUX%1").arg(k), ui.BIP_List);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Unchecked);
+    }
+
     // Init initial indexes
     if(!config_file.empty()) {
         load_config(config_file);
@@ -171,12 +161,12 @@ MainWindow::MainWindow(QWidget *parent, const std::string &config_file, const bo
         ui.samplingRate->setCurrentIndex(1);
         ui.EEG_Range->setCurrentIndex(0);
         ui.BIP_Range->setCurrentIndex(2);
-        applyCapToBipMask();
     }
 
 
     // make GUI connections
-    QObject::connect(ui.Cap_ID, SIGNAL(currentIndexChanged(int)), this, SLOT(capChanged(int)));
+    QObject::connect(ui.BIP_All, SIGNAL(clicked()), this, SLOT(selectAllBip()));
+    QObject::connect(ui.BIP_None, SIGNAL(clicked()), this, SLOT(selectNoBip()));
     QObject::connect(ui.actionLoad_Configuration, SIGNAL(triggered()), this, SLOT(load_config_dialog()));
     QObject::connect(ui.actionSave_Configuration, SIGNAL(triggered()), this, SLOT(save_config_dialog()));
     QObject::connect(ui.actionQuit, SIGNAL(triggered()), this, SLOT(close()));
@@ -219,22 +209,30 @@ void MainWindow::load_config(const std::string &filename) {
 
     // get config values
     try {
-        // Out-of-range ids (e.g. the former "128 - No Labels" entry, capId 4) fall back to the default cap
-        int capId = pt.get<int>("settings.capId", DEFAULT_CAP_ID);
-        if (capId < 0 || capId >= ui.Cap_ID->count())
-            capId = DEFAULT_CAP_ID;
-        ui.Cap_ID->blockSignals(true); // keep the BIP mask of the config file
+        // The cap is saved by name. Older files only have the combo box index: of
+        // those, only CA-203 (0) and CA-208 (1) still exist, others use the default cap.
+        int capId = DEFAULT_CAP_ID;
+        const std::string capName = pt.get<std::string>("settings.cap", "");
+        if (!capName.empty()) {
+            for (size_t k = 0; k < caps.size(); k++) {
+                if (capName == caps[k].name)
+                    capId = static_cast<int>(k);
+            }
+        } else {
+            const int legacyId = pt.get<int>("settings.capId", DEFAULT_CAP_ID);
+            if (legacyId == 0 || legacyId == 1)
+                capId = legacyId;
+        }
         ui.Cap_ID->setCurrentIndex(capId);
-        ui.Cap_ID->blockSignals(false);
         ui.samplingRate->setCurrentIndex(pt.get<int>("settings.samplingrate", 2));
         ui.EEG_Range->setCurrentIndex(pt.get<int>("settings.EegRange", 0));
         ui.BIP_Range->setCurrentIndex(pt.get<int>("settings.BipRange", 2));
 
-        std::string tmp = pt.get<std::string>("settings.hexBipMask", DEFAULT_BIP_MASK);
-        ui.BIP_LineEdit->setText(QString::fromStdString(tmp));
-
-        // truncate the BIP mask to the channels of the selected cap
-        applyCapToBipMask();
+        // BIP selection, saved as a hexadecimal mask (bit 0 = AUX1)
+        std::vector<bool> bipMask;
+        if (!parseHexMask(pt.get<std::string>("settings.hexBipMask", DEFAULT_BIP_MASK), bipMask))
+            bipMask.clear();
+        setBipSelection(bipMask);
     }
     catch (std::exception &) {
         QMessageBox::information(this, "Error in Config File", "Could not read out config parameters.", QMessageBox::Ok);
@@ -242,19 +240,24 @@ void MainWindow::load_config(const std::string &filename) {
     }
 }
 
-void MainWindow::capChanged(int) {
-    // the BIP selection is kept within the new cap's limit
-    applyCapToBipMask();
+std::vector<bool> MainWindow::bipSelection() const {
+    std::vector<bool> mask(static_cast<size_t>(ui.BIP_List->count()), false);
+    for (int k = 0; k < ui.BIP_List->count(); k++)
+        mask[static_cast<size_t>(k)] = ui.BIP_List->item(k)->checkState() == Qt::Checked;
+    return mask;
 }
 
-void MainWindow::applyCapToBipMask() {
-    const CapInfo cap = capInfo(ui.Cap_ID->currentIndex());
+void MainWindow::setBipSelection(const std::vector<bool> &mask) {
+    for (int k = 0; k < ui.BIP_List->count(); k++)
+        ui.BIP_List->item(k)->setCheckState(maskBit(mask, static_cast<size_t>(k)) ? Qt::Checked : Qt::Unchecked);
+}
 
-    std::vector<bool> bipMask;
-    if (!parseHexMask(ui.BIP_LineEdit->text().toStdString(), bipMask))
-        bipMask.clear();
+void MainWindow::selectAllBip() {
+    setBipSelection(std::vector<bool>(BIP_CHANNEL_COUNT, true));
+}
 
-    ui.BIP_LineEdit->setText(QString::fromStdString(formatHexMask(bipMask, cap.bipCount)));
+void MainWindow::selectNoBip() {
+    setBipSelection(std::vector<bool>());
 }
 
 void MainWindow::save_config(const std::string &filename) {
@@ -263,12 +266,11 @@ void MainWindow::save_config(const std::string &filename) {
 
     // transfer UI content into property tree
     try {
-        pt.put("settings.capId", ui.Cap_ID->currentIndex());
+        pt.put("settings.cap", std::string(capInfo(ui.Cap_ID->currentIndex()).name));
         pt.put("settings.samplingrate", ui.samplingRate->currentIndex());
         pt.put("settings.EegRange", ui.EEG_Range->currentIndex());
         pt.put("settings.BipRange", ui.BIP_Range->currentIndex());
-
-        pt.put("settings.hexBipMask", ui.BIP_LineEdit->text().toStdString());
+        pt.put("settings.hexBipMask", formatHexMask(bipSelection(), BIP_CHANNEL_COUNT));
 
     }
     catch (std::exception &e) {
@@ -310,21 +312,11 @@ void MainWindow::link() {
             tmpParam = ui.BIP_Range->currentText();
             double BipRange = tmpParam.toDouble() / 1000;
 
-            // BIP channel mask (arbitrary length, so the 48 BIP channels of cascaded
-            // amplifiers are supported), truncated to the channels of the selected cap.
-            // All the EEG channels of the cap are always streamed.
-            std::vector<bool> bipMask;
-            if (!parseHexMask(ui.BIP_LineEdit->text().toStdString(), bipMask)) {
-                QMessageBox::critical(this, "Error", "Invalid BIP channel mask: it must be a hexadecimal number (e.g. 0x000000).", QMessageBox::Ok);
-                return;
-            }
-            applyCapToBipMask();
-            parseHexMask(ui.BIP_LineEdit->text().toStdString(), bipMask);
-
+            // All the EEG channels of the cap are streamed, plus the checked BIP channels
             thread = new QThread();
             reader = new Reader();
 
-            reader->setParams(*capInfo(capId).labels, samplingRate, BipRange, EegRange, bipMask);
+            reader->setParams(*capInfo(capId).labels, samplingRate, BipRange, EegRange, bipSelection());
 
             reader->moveToThread(thread);
             connect(thread, SIGNAL(started()), reader, SLOT(read()));
@@ -401,50 +393,26 @@ void Reader::setParams(const std::vector<std::string> &capLayout, int samplingRa
     this->bipMask = bipMask;
 }
 
-// Sorting the amplifiers according to their serial number. First amplifier to connect should be the one with the lowest SN.
-template <typename T>
-std::vector<size_t> sort_indexes(const std::vector<T> &v) {
-
-    // initialize original index locations
-    std::vector<size_t> idx(v.size());
-    std::iota(idx.begin(), idx.end(), 0);
-
-    // sort indexes based on comparing values in v
-    std::sort(idx.begin(), idx.end(),
-         [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
-
-    return idx;
-}
-
 void Reader::OpenEegStream() {
-    std::vector<eemagine::sdk::amplifier*> amps;
-    std::vector<std::string> serialTmp;
-    amps = fact.getAmplifiers();
-
-    // Check if several amplifiers connected (128Ch)
-    if ( amps.size() > 1 ) {
-
-        for (unsigned int i = 0; i < amps.size(); ++i)
-            serialTmp.push_back(amps.at(i)->getSerialNumber());
-        std::vector<eemagine::sdk::amplifier*>  tmpAmps;
-        for (auto i : sort_indexes(serialTmp)) {
-            tmpAmps.push_back(amps.at(i));
-        }
-        amp = fact.createCascadedAmplifier(tmpAmps);
-        // or only one
-    } else if(amps.size() == 1 )
-        amp = amps.at(0);
-    else
+    std::vector<eemagine::sdk::amplifier*> amps = fact.getAmplifiers();
+    if (amps.empty())
         throw(exceptions::notFound("No amp found"));
 
-    if (!amp)
-        throw(exceptions::notFound("No amp found"));
+    // A single amplifier is used. If several are connected, take the one with the
+    // lowest serial number and release the others.
+    std::sort(amps.begin(), amps.end(), [](amplifier *a, amplifier *b) {
+        return a->getSerialNumber() < b->getSerialNumber();
+    });
+    amp = amps.front();
+    for (size_t k = 1; k < amps.size(); k++)
+        delete amps[k];
+    if (amps.size() > 1)
+        std::cout << "eegoSports: " << amps.size() << " amplifiers connected, using " << amp->getSerialNumber() << std::endl;
 
-    // The amplifier is always opened with ALL its EEG and BIP channels; the masks
-    // are applied in software when building the LSL stream (see read()).
-    // Reason: with cascaded amplifiers the SDK ignores a channel subset and still
-    // delivers the data of every channel, while sizing its buffers for the subset,
-    // which corrupts the heap and crashes the application.
+    // The amplifier is always opened with ALL its EEG and BIP channels; the channel
+    // selection is applied in software when building the LSL stream (see read()).
+    // (The eego SDK mishandles channel subsets with cascaded amplifiers, so the
+    // full channel list is the safest way to open a stream.)
     // eegLabels / bipLabels hold one entry per amplifier channel; an empty label
     // means that the channel is not streamed.
     eegLabels.clear();
@@ -481,10 +449,8 @@ void Reader::OpenEegStream() {
               << " BIP channels." << std::endl;
     if (eegLabels.size() < capLayout.size())
         throw std::runtime_error("The selected cap has " + std::to_string(capLayout.size())
-                                 + " EEG channels but the connected amplifier(s) only provide "
-                                 + std::to_string(eegLabels.size()) + ". A 128 channel cap needs two cascaded amplifiers.");
-    if (eegStreamed + bipStreamed == 0)
-        throw std::runtime_error("The EEG/BIP masks do not select any channel.");
+                                 + " EEG channels but the connected amplifier only provides "
+                                 + std::to_string(eegLabels.size()) + ".");
 
     // EEG stream's instanciation
     eegStream = amp->OpenEegStream(samplingRate, EegRange, BipRange, allChannels);

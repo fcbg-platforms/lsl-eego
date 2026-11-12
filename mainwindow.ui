@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>281</width>
-    <height>294</height>
+    <width>300</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,26 +35,9 @@
          </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="Cap_ID">
-           <item>
-            <property name="text">
-             <string>CA-203  (32 ch)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>CA-208  (64 ch)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>CA-209  (128 ch)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>NA-265  (64 ch)</string>
-            </property>
-           </item>
+           <property name="toolTip">
+            <string>Cap layout: defines the EEG channels streamed and their labels.</string>
+           </property>
           </widget>
          </item>
          <item row="1" column="0">
@@ -194,19 +177,50 @@
          <item row="4" column="0">
           <widget class="QLabel" name="BIP_Channel_Label">
            <property name="text">
-            <string>BIP channel mask</string>
+            <string>BIP channels</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QLineEdit" name="BIP_LineEdit">
-           <property name="text">
-            <string>0x000000</string>
-           </property>
-           <property name="toolTip">
-            <string>Hexadecimal mask of the bipolar (AUX) channels to stream (bit 0 = AUX1). Truncated to the cap maximum: 6 hex digits (24 channels) for the 32 and 64 ch caps, 12 hex digits (48 channels) for the 128 ch cap.</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="BIP_Layout">
+           <item>
+            <widget class="QListWidget" name="BIP_List">
+             <property name="toolTip">
+              <string>Bipolar (AUX) channels to stream, in addition to all the EEG channels of the cap.</string>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::NoSelection</enum>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>140</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="BIP_Buttons">
+             <item>
+              <widget class="QPushButton" name="BIP_All">
+               <property name="text">
+                <string>All</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="BIP_None">
+               <property name="text">
+                <string>None</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>

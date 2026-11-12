@@ -1,7 +1,7 @@
 # LSL plugin for the EEG acquisition with ANTneuro device.
 
-A single code base builds for Windows and Linux and supports 32, 64 and 128 channel caps
-(128 channels = two cascaded eego amplifiers, with up to 48 bipolar/AUX channels).
+A single code base builds for Windows and Linux. It streams one eego amplifier with a 32 or 64 channel cap,
+plus up to 24 bipolar/AUX channels.
 
 ## Download
 Builds are produced by GitHub Actions ([.github/workflows/build.yml](.github/workflows/build.yml)):
@@ -39,23 +39,21 @@ The project uses qmake ([eegoSports.pro](eegoSports.pro)) with Qt 6, the Boost h
 The workflow file is the reference for the exact build steps.
 
 ## Usage
-1. Select the ```CAP ID``` by looking directly on the cap you have. The cap defines the channels that can be streamed:
+1. Select the ```CAP ID``` by looking directly on the cap you have. All the EEG channels of the cap are streamed:
 
-   | Cap | EEG channels | BIP channels (max) | Amplifiers |
-   |---|---|---|---|
-   | CA-203 | 32 | 24 | 1 |
-   | CA-208 | 64 | 24 | 1 |
-   | CA-209 | 128 | 48 | 2 cascaded (ordered by serial number) |
-   | NA-265 | 64 | 24 | 1 |
+   | Cap | EEG channels |
+   |---|---|
+   | CA-203 | 32 |
+   | CA-208 | 64 |
+   | NA-265 | 64 |
 
-   All the EEG channels of the selected cap are always streamed. Selecting a cap truncates the BIP mask to its maximum. Selecting CA-209 with a single amplifier gives an error when linking.
+   If several amplifiers are connected, the one with the lowest serial number is used.
 2. Select the desired ```sampling rate```
 3. Pre-Selected ```EEG/BIP ranges``` are ok for most of the application.
-4. The ```BIP mask``` selects the bipolar (AUX) channels to stream. The mask is in hexadecimal: bit 0 (rightmost) is AUX1. Write from right to left a binary vector (e.g. 00101 to keep only AUX1 and AUX3) and then convert it to an hexadecimal (<https://www.rapidtables.com/convert/number/binary-to-hex.html>). The mask is truncated to the channels of the selected cap.
-   - All BIP channels: `0xFFFFFF` (24 ch), `0xFFFFFFFFFFFF` (48 ch, cascaded). No BIP channel: `0x000000`.
+4. Tick the ```BIP channels``` (AUX1 to AUX24) to stream in addition to the EEG channels (```All``` / ```None``` buttons for convenience).
 5. Press ```Link``` button to start the data streaming to the LSL local server.
 
-The settings can be saved/loaded as a `.cfg` file, and the application can be started from the command line with `-c <config file>` and `-l 1` to link automatically.
+The settings can be saved/loaded as a `.cfg` file (the BIP selection is stored as a hexadecimal mask, bit 0 = AUX1), and the application can be started from the command line with `-c <config file>` and `-l 1` to link automatically.
 
 ## Support
 Contact <arnaud.desvachez@gmail.com>

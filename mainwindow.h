@@ -11,11 +11,10 @@
 #include <vector>
 
 // LSL API
-#include <LSL/lsl_cpp.h>
+#include <lsl/lsl_cpp.h>
 
 // eegoSports
 #define WIN32_LEAN_AND_MEAN
-#define EEGO_SDK_BIND_STATIC
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -38,7 +37,7 @@ public slots:
     void setStop(bool stop) {
         this->stop = stop;
     }
-    void setParams(int capId, int samplingRate, double BipRange, double EegRange, unsigned long long hexEegMask, unsigned long long hexBipMask);
+    void setParams(const std::vector<std::string> &capLayout, int samplingRate, double BipRange, double EegRange, const std::vector<bool> &bipMask);
 
 private:
     void OpenEegStream();
@@ -49,6 +48,7 @@ signals:
     void ampNotFound();
     void connectionLost();
     void unknownError();
+    void errorMessage(const QString &message);
 
 private:
     // SDK classes
@@ -61,11 +61,16 @@ private:
     int samplingRate;
     double EegRange;
     double BipRange;
-    unsigned long long hexEegMask;
-    unsigned long long hexBipMask;
+    // BIP channel selection, one entry per channel (index 0 = AUX1)
+    std::vector<bool> bipMask;
 
-    // Cap layout
+    // Cap layout (labels of the EEG/reference channels, in amplifier order).
+    // All the EEG channels of the cap are streamed.
     std::vector<std::string> capLayout;
+
+    // One label per amplifier EEG/BIP channel; empty = channel not streamed
+    std::vector<std::string> eegLabels;
+    std::vector<std::string> bipLabels;
 
     // Stop acquisition if set to false.
     bool stop;
@@ -88,6 +93,9 @@ private slots:
     void connectionLost();
     void ampNotFound();
     void unknownError();
+    void errorMessage(const QString &message);
+    void selectAllBip();
+    void selectNoBip();
     void load_config_dialog();
     void save_config_dialog();
 
@@ -104,6 +112,13 @@ private:
     // raw config file IO
     void load_config(const std::string &filename);
     void save_config(const std::string &filename);
+
+    // checked BIP channels of the list (index 0 = AUX1)
+    std::vector<bool> bipSelection() const;
+    void setBipSelection(const std::vector<bool> &mask);
+
+    // enable/disable the device settings (frozen while linked)
+    void setSettingsEnabled(bool enabled);
 
     Reader *reader;
     QThread *thread;

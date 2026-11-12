@@ -37,7 +37,7 @@ public slots:
     void setStop(bool stop) {
         this->stop = stop;
     }
-    void setParams(const std::vector<std::string> &capLayout, int samplingRate, double BipRange, double EegRange, const std::vector<bool> &eegMask, const std::vector<bool> &bipMask);
+    void setParams(const std::vector<std::string> &capLayout, int samplingRate, double BipRange, double EegRange, const std::vector<bool> &bipMask);
 
 private:
     void OpenEegStream();
@@ -61,16 +61,15 @@ private:
     int samplingRate;
     double EegRange;
     double BipRange;
-    // Channel selection masks, one entry per channel (index 0 = first channel).
-    // Stored as bit vectors so that cascaded amplifiers (128 EEG + 48 BIP channels)
-    // are not limited by the 64-bit masks of the SDK convenience API.
-    std::vector<bool> eegMask;
+    // BIP channel selection mask, one entry per channel (index 0 = AUX1).
+    // Stored as a bit vector so that the 48 BIP channels of cascaded amplifiers fit.
     std::vector<bool> bipMask;
 
-    // Cap layout (labels of the EEG/reference channels, in amplifier order)
+    // Cap layout (labels of the EEG/reference channels, in amplifier order).
+    // All the EEG channels of the cap are streamed.
     std::vector<std::string> capLayout;
 
-    // One label per amplifier EEG/BIP channel; empty = channel not selected by the masks
+    // One label per amplifier EEG/BIP channel; empty = channel not streamed
     std::vector<std::string> eegLabels;
     std::vector<std::string> bipLabels;
 
@@ -114,8 +113,8 @@ private:
     void load_config(const std::string &filename);
     void save_config(const std::string &filename);
 
-    // make the EEG/BIP masks match the selected cap (32/64/128 EEG, 24/24/48 BIP)
-    void applyCapToMasks(bool resetEegMask);
+    // truncate the BIP mask to the selected cap (24 BIP, or 48 for the 128 ch cap)
+    void applyCapToBipMask();
 
     Reader *reader;
     QThread *thread;
